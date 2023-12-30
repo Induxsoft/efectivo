@@ -23,6 +23,9 @@ module "list.dk"
                 a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
                 a(href="#<@CHQ_AGREGAR>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Agregar"}
                 a(href="#<@EFC_BANCO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Bancos"}
+                a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar depósito"}
+                a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar retiro"}
+                a(href="#<@MOV_TRASPASO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar transferencia"}
             }
         }
 

@@ -25,11 +25,11 @@ module "list.dk"
             div(class="col-4 d-flex align-items-center p-0") { h1(class="h5 text-primary tex-no-break m-0"){$"Movimientos"} }
             div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
             {
-                a(href="#<@EFC_CHEQUERA>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_ARROW_LEFT>"}
                 a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
-                a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Agregar depósito"}
-                a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Agregar retiro"}
+                a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar depósito"}
+                a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar retiro"}
                 a(href="#<@MOV_TRASPASO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar transferencia"}
+                a(href="#<@EFC_CHEQUERA>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_X_LG>"}
             }
         }
 
