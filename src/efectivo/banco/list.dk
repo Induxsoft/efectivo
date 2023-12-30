@@ -1,0 +1,68 @@
+#include "dkli.dkh"
+#!
+module "list.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "../_lib/icons.dk"
+    #include "../_lib/config.dk"
+
+    do @context.begin(@crud_context)
+    ref cBancos = ifnull(@('&.'),list.create())
+    
+    #$
+    div(class="container")
+    {
+        link(href="#<@CSS_MAIN>" rel="stylesheet")
+
+        div(class="row container-section m-0 px-0 py-2 my-2 border-bottom sticky-top bg-white" id="main_action_bar")
+        {
+            div(class="col-4 d-flex align-items-center p-0") { h1(class="h5 text-primary tex-no-break m-0"){$"Catálogo de Bancos"} }
+            div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
+            {
+                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
+                a(href="#<@BNC_AGREGAR>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Agregar"}
+                a(href="#<@EFC_CHEQUERA>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Cuentas"}
+            }
+        }
+        
+        div(class="table-responsive mt-2")
+        {
+            table(class="table table-sm table-striped table-bordered")
+            {
+                thead
+                {
+                    tr
+                    {
+                        th{$"#"}
+                        th{$"Nombre"}
+                        th{$"Web"}
+                        th{$"Acciones"}
+                    }
+                }
+                tbody
+                {
+                    #!
+                    go foreach.lobj(index:i, value:banco) with(cBancos)
+                    {
+                        row = (i+1)
+                        #$
+                        tr
+                        {
+                            td{$"#<row>"}
+                            td{$"#<@@(banco,'$nombre')>"}
+                            td{a(href="#<@@(banco,'$website')>" target="_blank"){$"#<@@(banco,'$website')>"}}
+                            td
+                            {
+                                a(class="btn btn-primary btn-xs m-1" href="./#<@@(banco,'sys_pk')>/"){$"Editar"}
+                                button(class="btn btn-danger btn-xs m-1" onclick="InduxsoftCrudlModel.Delete(#<@@(banco,'sys_pk')>)"){$"Eliminar"}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        p{$"#<@('$error/message')>"}
+    }
+}

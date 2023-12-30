@@ -1,0 +1,26 @@
+#include "dkli.dkh"
+#!
+module "index"
+{
+	#include "functions.dkh"
+	#include "serialize.dkh"
+	#include "_lib/config.dk"
+
+	if @@(@http_context,"$session/user/ids") == "" {
+		@http_context<"response/headers/location"> : "/"
+		return
+	}
+	
+	#$
+	div(class="container-fluid")
+	{
+		div(class="card")
+		{
+			div(class="card-body")
+			{
+				a(href="#<@EFC_BANCO>"){"Bancos"}br{}
+				a(href="#<@EFC_CHEQUERA>"){"Cuentas"}br{}
+			}
+		}
+	}
+}

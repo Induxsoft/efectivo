@@ -1,0 +1,193 @@
+#include "ddm.dkh"
+model "erp.efectivo"
+{
+    /**
+     Efectivo
+     =======================================================================
+    */
+
+    #include "induxsoft.abstracts.ddm"
+
+    //* ======================================== [ DEPENDENCIAS (FK) ]
+    // Tipos de documentos comerciales
+    entity "cdocumentos" : "EnumModel" {}
+    // Estados posibles para un cliente, proveedor u organización
+    entity "cstatusorg" : "EnumModel" {}
+    // Tasas de IVA aplicables por razón de ubicación geográfica
+    entity "ctasasiva" : "EnumModel" {}
+    // Enumeración de tipos de categorías de propósito general
+    entity "ctiposcategorias" : "EnumModel"
+    {
+        /**
+        * 1 = cIngreso
+        * 2 = cEgreso
+        * 3 = cInventario
+        */
+    }
+    // Categorías de propósito general para clasificar operaciones
+    entity "categoria" : "TableModel"
+    {
+        @"codcuenta" string(50) unique
+        @"codigo" string(5) unique required
+        @"descripcion" string(50) unique required
+        @"pmensual" decimal(18,8)
+        @"tipo" ref:"ctiposcategorias"
+        @"padre" ref:"categoria"
+        @"uf_inhabilitado" bool
+        @"uf_fechainhabilitacion" datetime
+    }
+    // contacto
+    entity "contacto" : "TableModel"
+    {
+        @"apellidos" string(50) required
+        // ...
+        @"nombre" string(50) required
+        // ...
+    }
+    // Catálogo de monedas o divisas
+    entity "divisa" : "TableModel"
+    {
+        @"codigo" string(5) unique required
+        @"descripcion" string(30) unique required
+        @"tcambio" decimal(18,8)
+    }
+    // tipooperacion
+    entity "tipooperacion"
+    {
+        @"sys_pk" int key required autoincrement
+        @"id" string(2) unique required
+        @"descripcion" string(50)
+        @"sys_recver" int
+        @"sys_lock" int
+        @"sys_deleted" bool
+    }
+    // Tipo (clasificación) del proveedor
+    entity "tipoproveedor" : "TableModel"
+    {
+        @"codigo" string(15) unique required
+        @"descripcion" string(50) unique required
+        @"notas" string(4096) 
+    }
+    // Datos de un proveedor
+    entity "proveedor" : "TableModel"
+    {
+        // ...
+        @"codigo" string(35) unique required    // Código o identificador del proveedor
+        // ...
+        @"nombre" string(150) unique required   // Nombre o razón social
+        // ...
+        @"status" ref:"cstatusorg"              // Status del proveedor (normal o bloqueado)
+        @"tasaiva" ref:"ctasasiva" required     // Tipo de tasa de IVA aplicable por razón de su zona económica
+        // ...
+        @"idivisa" ref:"divisa" required        // Divisa del proveedor
+        // ...
+        @"tipo" ref:"tipoproveedor" required    // Tipo de proveedor
+        // ...
+        @"uf_tipoop" ref:"tipooperacion"
+    }
+    // Configuración de documentos por pagar
+    entity "cfg_cxp_docs"
+    {
+        @"documento" ref:"cdocumentos" key
+        @"pagable" bool     // Si es true, puede agregarse como documento por pagar al que se le pueden aplicar cargos, bonificaciones y pagos
+        @"apl_int_fin" bool // Si es true, puede usarse para aplicarse como intereses financieros
+        @"apl_int_mor" bool // si es true, puede usarse para aplicarse como intereses moratorios
+        @"apl_bonific" bool // si es true, puede usarse para aplicarse como bonificación
+        @"apl_pago" bool    // si es true, puede usarse para aplicarse como pago
+    }
+    // Configuración de documentos por pagar
+    entity "cfg_chq_docs"
+    {
+        @"documento" ref:"cdocumentos" key
+        @"depositos" bool
+        @"retiros" bool
+        @"traspasos" bool
+    }
+
+    //* ======================================== [ ENTIDADES PRINCIPALES ]
+    // Datos de una institución financiera
+    entity "banco" : "TableModel"
+    {
+        @"nombre" string(50) unique required
+        @"notas" string(2048)
+        @"website" string(150)
+        @"contacto" ref:"contacto"
+    }
+    // Datos de una cuenta en una institución financiera
+    entity "chequera" : "TableModel"
+    {
+        @"clabe" string(18) unique
+        @"codcuenta" string(50) unique
+        @"nombre" string(25) unique required
+        @"notas" string(4096)
+        @"numcuenta" string(25) unique
+        @"ibanco" ref:"banco"
+        @"idivisa" ref:"divisa" required
+        @"credito" bool // Si es true, la cuenta es crédito revolvente
+        @"limite" decimal(18,4) // Límite de crédito, si es null no hay límite de crédito
+    }
+    // Movimientos de una cuenta en una institución financiera
+    entity "movcuenta" : "TableModel"
+    {
+        @"aplicacion" date
+        @"auditado" bool
+        @"beneficiario" string(150)
+        @"cancelado" bool
+        @"conciliado" bool
+        @"contabilizado" bool
+        @"egreso" decimal(18,8)
+        @"fecha" date
+        @"ingreso" decimal(18,8)
+        @"notas" string(4096) required
+        @"partida" string(32)
+        @"poliza" string(32)
+        @"referencia" string(50) required
+        @"tipo" ref:"cdocumentos" required
+        @"icategoria" ref:"categoria" required
+        @"icuenta" ref:"chequera" required
+        @"uf_color" int
+        @"uf_fechacancelacion" datetime
+        @"uf_iproveedor" ref:"proveedor"
+
+        index "movcuenta_id" unique
+        {
+            field "icuenta"
+            field "referencia"
+        }
+    }
+
+    //* ======================================== [ ... ]
+    // Permisos disponibles
+    entity "sitem" : "TableModel"
+    {
+        @"description" string(250)
+        @"itemid" string(32) unique required
+        @"itemparent" ref:"sitem"
+    }
+    // Información de la aplicación
+    entity "sys_app_catalog"
+    {
+        @"pack_id" string(32) required
+        @"app_id" string(32) key
+        @"app_title" string(255)
+        @"created" datetime required
+        @"app_info" mmemo
+    }
+    // Categoria de la aplicación
+    entity "sys_app_category"
+    {
+        @"id" string(32) key
+        @"title" string(255) required
+    }
+    // Recursos de la aplicación
+    entity "sys_app_shortcut" 
+    {
+        @"id" string(32) key
+        @"title" string(255) required
+        @"icon96x96" string(1024) required
+        @"src" string(1024) required
+        @"_blank" bool
+        @"appid" ref:"sys_app_catalog"
+        @"cat" ref:"sys_app_category"
+    }
+}

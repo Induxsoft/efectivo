@@ -1,0 +1,78 @@
+#include "dkli.dkh"
+#!
+module
+{
+	#include "dbr.dkh"
+	#include "dbr.vars.dkl"
+	#include "dbr.security.dkl"
+	#include "dbr.events.dkl"
+	#include "crudl/crudl.dk"
+	
+	//* ======================================== [ CONSTANTS ]
+	ref database = crudl.database()
+	@SYS_PK_DIVISA_PREDETERMINADA = parse.num(dbr.vars.get(database,"FXCA013"))
+
+	// Formato de presentación
+	@THOUSANDS_SEPARATOR = ","
+	@DECIMAL_SEPARATOR = "."
+	@DECIMAL_PRECISION = 2
+
+	//* ======================================== [ _STATIC RESOURCES ]
+	@CSS_MAIN = "/$/efectivo/css/main.css"
+	@JS_BANCO = "/$/efectivo/js/banco.js"
+	@JS_CHEQUERA = "/$/efectivo/js/chequera.js"
+	@JS_MOVCUENTA = "/$/efectivo/js/movcuenta.js"
+
+	//* ======================================== [ _PACKAGE ]
+	@EFC_MENU = "/!/efectivo/"
+
+	//#region cxp_banco
+	@EFC_BANCO = "/!/efectivo/bancos/"
+	@BNC_AGREGAR = "/!/efectivo/bancos/_new/"
+	//#endregion
+
+	//#region cxp_chequera
+	@EFC_CHEQUERA = "/!/efectivo/cuentas/"
+	@CHQ_AGREGAR = "/!/efectivo/cuentas/_new/"
+	//#endregion
+
+	//#region cxp_movcuenta
+	@EFC_MOVCUENTA = "/!/efectivo/movcuenta/"
+	@MOV_MOVIMIENTOS = "/!/efectivo/movcuenta/@cuenta/movimientos/"
+	@MOV_DEPOSITO = "/!/efectivo/movcuenta/_new/deposito/"
+	@MOV_RETIRO = "/!/efectivo/movcuenta/_new/retiro/"
+	@MOV_TRASPASO = "/!/efectivo/movcuenta/_new/traspaso/"
+	//#endregion
+	
+	//* ======================================== [ AUTHORIZATIONS ]
+	
+	//- - - - - - - - - - - - - - - Bancos [banco]
+	@CXP_SEC_PRIVID_CONSULTAR_BANCOS="FX1-10-30-000"
+	@CXP_SEC_PRIVID_ADD_BANCOS="FX1-10-30-002"
+	@CXP_SEC_PRIVID_EDIT_BANCOS="FX1-10-30-003"
+	@CXP_SEC_PRIVID_DEL_BANCOS="FX1-10-30-004"
+	
+	//- - - - - - - - - - - - - - - Cuentas [chequera]
+	/*
+	- Consultar cuentas bancarias. 
+			- Verificar si el código del permiso es correcto
+	*/
+	@CXP_SEC_PRIVID_CONSULTAR_CUENTAS_BANCARIAS="FX1-72-00-000"
+	/*
+	- Agregar, editar y eliminar cuentas bancarias
+			- Colocar los códigos de los permisos correctos
+	*/
+	@CXP_SEC_PRIVID_ADD_CUENTA_BANCARIA="FX1-72-00-000"
+	@CXP_SEC_PRIVID_EDIT_CUENTA_BANCARIA="FX1-72-00-000"
+	@CXP_SEC_PRIVID_DEL_CUENTA_BANCARIA="FX1-72-00-000"
+
+	//- - - - - - - - - - - - - - - Movimientos [movcuenta]
+	@CXP_SEC_PRIVID_ADD_DEPOSITO="FX1-72-03-000"
+	@CXP_SEC_PRIVID_ADD_RETIRO="FX1-72-01-000"
+	@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA="FX1-72-04-000"
+	/*
+	- Estado de cuenta bancaria
+			- Verificar si el código del permiso es correcto
+	*/
+	@CXP_SEC_PRIVID_ESTADO_CUENTA_BANCARIA="FX1-72-00-000"
+}

@@ -1,0 +1,91 @@
+#include "dkli.dkh"
+#!
+module "form.dk"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "uielements.dkl"
+    #include "../_lib/icons.dk"
+    #include "../_lib/config.dk"
+    #include "lib.dk"
+
+    do @context.begin(@crud_context)
+    
+    #$
+    div(class="container")
+    {
+        div(class="row container-section m-0 px-0 py-2 my-2 border-bottom sticky-top bg-white" id="main_action_bar")
+        {
+            div(class="col-4 d-flex align-items-center p-0") { h1(class="h5 text-primary tex-no-break m-0"){$"Depósito"} }
+            div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
+            {
+                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
+                button(type="button" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_save"){$"#<@ICON_SAVE> Guardar"}
+                a(href="#<@EFC_CHEQUERA>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_X_LG>"}
+            }
+        }
+
+        div(class="row")
+        {
+            div(class="col-lg-4 col-md-8 col-sm-12")
+            {
+                form(action="." method="POST" id="form_deposito")
+                {
+                    label(class="form-label" "for"="sel_cuenta"){$"Cuenta:"}
+                    ##
+                    do listarCuentas()
+                    ##
+
+                    label(class="form-label" "for"="sel_categoria"){$"Categoria:"}
+                    ##
+                    do listarCategorias()
+                    ##
+
+                    label(class="form-label" "for"="sel_documento"){$"Documento:"}
+                    ##
+                    do listarTiposDocumentos()
+                    ##
+
+                    label(class="form-label" "for"="txt_referencia"){$"Referencia:"}
+                    input(type="text" class="form-control form-control-sm rounded-0" name="referencia" id="txt_referencia" value="#<@('$input/referencia')>" required="")
+
+                    label(class="form-label" "for"="txt_fecha"){$"Fecha:"}
+                    input(type="date" class="form-control form-control-sm rounded-0" name="fecha" id="txt_fecha" value="" required="#<@('$input/fecha')>")
+
+                    label(class="form-label" "for"="txt_aplicacion"){$"Fecha de aplicación:"}
+                    input(type="date" class="form-control form-control-sm rounded-0" name="aplicacion" id="txt_aplicacion" value="#<@('$input/aplicacion')>" required="")
+
+                    label(class="form-label" "for"="txt_importe"){$"Importe:"}
+                    input(type="number" class="form-control form-control-sm rounded-0" name="importe" min="0" step="0.000001" id="txt_importe" value="#<@('$input/importe')>" required="")
+
+                    label(class="form-label" "for"="txt_concepto"){$"Concepto:"}
+                    textarea(class="form-control rounded-0" name="concepto" id="txt_concepto")
+                    { $"#<@('$input/concepto')>" }
+
+                    div(class="form-check") {
+                        input(class="form-check-input" type="checkbox" name="conciliado" id="ch_conciliado" checked="checked")
+                        label(class="form-check-label" "for"="ch_conciliado"){$"Conciliado"}
+                    }
+                }
+            }
+        }
+
+        p{$"#<@('$error/message')>"}
+
+        div
+        {
+            script(type="text/javascript")
+            {$'
+                document.addEventListener("DOMContentLoaded", () => {
+                    let formDeposito = document.getElementById("form_deposito");
+                    let btnSave = document.getElementById("btn_save");
+
+                    btnSave.addEventListener("click", () => {
+                        if (!formDeposito.reportValidity()) return;
+                        formDeposito.submit();
+                    });
+                });
+            '}
+        }
+    }
+}
