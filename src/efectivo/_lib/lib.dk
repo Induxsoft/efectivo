@@ -98,7 +98,14 @@ module "lib.dk"
             @"sys_guid": uuid()
             @"sys_dtcreated*": now()
             @"sys_timestamp*": now()
+            // @"sys_info": ""
+            // @"sys_user": ""
+            // @"sys_lastuser": ""
+            // @"sys_exported": @false
+            // @"sys_dtexported*": @null
             @"sys_recver": 0
+            // @"sys_deleted": @false
+            // @"sys_lock": 0
         }
         return record
     }
