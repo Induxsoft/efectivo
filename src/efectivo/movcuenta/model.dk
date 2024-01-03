@@ -10,6 +10,8 @@ module "model"
         {
             case "deposito"
             {
+                if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_DEPOSITO)) { do rise_error(0,"No autorizado") }
+
                 sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c INNER JOIN divisa d ON d.sys_pk = c.idivisa WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
                 data<"cuentas*"> : dbr.list(db,sql,@null)
                 sql = "SELECT sys_pk,descripcion FROM categoria WHERE tipo = 1 AND NOT IFNULL(sys_deleted,0) ORDER BY sys_pk;"
@@ -20,6 +22,8 @@ module "model"
             }
             case "retiro"
             {
+                if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_RETIRO)) { do rise_error(0,"No autorizado") }
+
                 sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c INNER JOIN divisa d ON d.sys_pk = c.idivisa WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
                 data<"cuentas*"> : dbr.list(db,sql,@null)
                 sql = "SELECT sys_pk,descripcion FROM categoria WHERE tipo = 2 AND NOT IFNULL(sys_deleted,0) ORDER BY sys_pk;"
@@ -30,6 +34,8 @@ module "model"
             }
             case "traspaso"
             {
+                if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA)) { do rise_error(0,"No autorizado") }
+
                 sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c INNER JOIN divisa d ON d.sys_pk = c.idivisa WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
                 data<"cuentas*"> : dbr.list(db,sql,@null)
                 sql = "SELECT sys_pk,descripcion FROM categoria WHERE tipo = 30 AND NOT IFNULL(sys_deleted,0) ORDER BY sys_pk;"
@@ -128,148 +134,77 @@ module "model"
 
     mov.deposito::&db,&params,&data
     {
+        do errordet(@false)
         if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_DEPOSITO)) { do rise_error(0,"No autorizado")}
-
-        new p{@"referencia":@@(data,"$referencia")}
-        if trim(@@(data,"$referencia"))==""{do rise_error(500,"Debe indicar una referencia")}
-        if trim(@@(data,"$referencia"))!=""
-        {
-            ref rec=dbr.rec(db,"select * from movcuenta where referencia=@referencia",p)
-            if not(isnull(rec)){do rise_error(500,"El valor de la referencia ya existe")}
-        }
-
-        new deposito
-        {
-            @"sys_pk": 0
-            @"sys_guid": uuid()
-            @"sys_dtcreated*": now()
-            @"sys_timestamp*": now()
-            @"aplicacion*": str2dt(@@(data,"$aplicacion"))
-            @"auditado": @true
-            @"cancelado": @false
-            @"conciliado": parse.bool(@@(data,"$conciliado"))
-            @"contabilizado": @false
-            @"egreso": 0.0
-            @"fecha*": str2dt(@@(data,"$fecha"))
-            @"ingreso": @@(data,"#importe")
-            @"notas": @@(data,"$concepto")
-            @"referencia": @@(data,"$referencia")
-            @"tipo": @@(data,"#documento")
-            @"icategoria": @@(data,"#categoria")
-            @"icuenta": @@(data,"#cuenta")
-        }
-        do dbr.insert(db,"movcuenta",deposito)
-
-        @url_redir=@EFC_MOVCUENTA + @@(deposito,"$icuenta") +"/movimientos/" 
+        do erp.efectivo.movimientos.deposito(db,data)
+        @url_redir = @EFC_MOVCUENTA + @@(data,"$icuenta") + "/movimientos/" 
 
         exception
         {
+            if dbr.in_transaction(db) { do dbr.rollback(db) }
+
+            ref formData = record.copy(data,"*")
+            code = last_error_code()
+            error = last_error()
+
+            do record.clear(data)
+            data<"form*"> : formData
+            
             do mov.prepareView(db,params,data)
-            do rise_error(last_error_code(),last_error())
+            do rise_error(code,error)
         }
     }
 
     mov.retiro::&db,&params,&data
     {
+        do errordet(@false)
         if not(@@(params,"#auth_transferencia")){if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_RETIRO)) { do rise_error(0,"No autorizado")}}
-
-        new p{@"referencia":@@(data,"$referencia")}
-        if trim(@@(data,"$referencia"))==""{do rise_error(500,"Debe indicar una referencia")}
-        if trim(@@(data,"$referencia"))!=""
-        {
-            ref rec=dbr.rec(db,"select * from movcuenta where referencia=@referencia",p)
-            if not(isnull(rec)){do rise_error(500,"El valor de la referencia ya existe")}
-        }
-        
-        new retiro
-        {
-            @"sys_pk": 0
-            @"sys_guid": uuid()
-            @"sys_dtcreated*": now()
-            @"sys_timestamp*": now()
-            @"aplicacion*": str2dt(@@(data,"$aplicacion"))
-            @"auditado": @true
-            @"beneficiario": @@(data,"$beneficiario")
-            @"cancelado": @false
-            @"conciliado": parse.bool(@@(data,"$conciliado"))
-            @"contabilizado": @false
-            @"egreso": @@(data,"#importe")
-            @"fecha*": str2dt(@@(data,"$fecha"))
-            @"ingreso": 0.0
-            @"notas": @@(data,"$concepto")
-            @"referencia": @@(data,"$referencia")
-            @"tipo": @@(data,"#documento")
-            @"icategoria": @@(data,"#categoria")
-            @"icuenta": @@(data,"#cuenta")
-        }
-        do dbr.insert(db,"movcuenta",retiro)
-        @url_redir=@EFC_MOVCUENTA + @@(retiro,"$icuenta") +"/movimientos/" 
+        do erp.efectivo.movimientos.retiro(db,data)
+        @url_redir = @EFC_MOVCUENTA + @@(data,"$icuenta") + "/movimientos/" 
 
         exception
         {
+            if dbr.in_transaction(db) { do dbr.rollback(db) }
+
+            ref formData = record.copy(data,"*")
+            code = last_error_code()
+            error = last_error()
+
+            do record.clear(data)
+            data<"form*"> : formData
+            
             do mov.prepareView(db,params,data)
-            do rise_error(last_error_code(),last_error())
+            do rise_error(code,error)
         }
     }
 
     mov.traspaso::&db,&params,&data
     {
+        do errordet(@false)
         params<"auth_transferencia">:dbr.security.isauth(db,@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA)
         if not(@@(params,"#auth_transferencia")) { do rise_error(0,"No autorizado")}
-
-        do dbr.begin(db)
-
-        new retiro
-        {
-            @"aplicacion": @@(data,"$aplicacion")
-            @"beneficiario": dbr.str(db,"select nombre from chequera where sys_pk = @cuenta_destino;",data)
-            @"conciliado": parse.bool(@@(data,"$conciliado"))
-            @"importe": @@(data,"#importe")
-            @"fecha": @@(data,"$fecha")
-            @"concepto": @@(data,"$concepto")
-            @"referencia": @@(data,"$referencia_retiro")
-            @"documento": @@(data,"#documento_retiro")
-            @"categoria": @@(data,"#categoria")
-            @"cuenta": @@(data,"#cuenta_destino")
-        }
-        do mov.retiro(db,params,retiro)
-
-        new deposito
-        {
-            @"aplicacion": @@(data,"$aplicacion")
-            @"conciliado": parse.bool(@@(data,"$conciliado"))
-            @"importe": @@(data,"#importe")
-            @"fecha": @@(data,"$fecha")
-            @"concepto": @@(data,"$concepto")
-            @"referencia": @@(data,"$referencia_deposito")
-            @"documento": @@(data,"#documento_deposito")
-            @"categoria": @@(data,"#categoria")
-            @"cuenta": @@(data,"#cuenta_origen")
-        }
-        do mov.deposito(db,params,deposito)
-
-        do dbr.commit(db)
-
-        @url_redir=@EFC_MOVCUENTA + @@(deposito,"$cuenta") +"/movimientos/"
+        do erp.efectivo.movimientos.traspaso(db,data)
+        @url_redir = @EFC_MOVCUENTA + @@(data,"$cuenta_destino") +"/movimientos/"
         
         exception
         {
-            last_error=last_error()
             if dbr.in_transaction(db) { do dbr.rollback(db) }
+
+            ref formData = record.copy(data,"*")
+            code = last_error_code()
+            error = last_error()
+
+            do record.clear(data)
+            data<"form*"> : formData
+            
             do mov.prepareView(db,params,data)
-            do rise_error(0,last_error)
+            do rise_error(code,error)
         }
     }
 
     mov.blank::&db,&params
     {
-        switch @@(params,"$_view")
-        {
-            case "deposito"{if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_DEPOSITO)) { do rise_error(0,"No autorizado")}}
-            case "retiro"{if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_RETIRO)) { do rise_error(0,"No autorizado")}}
-            case "traspaso"{if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA)) { do rise_error(0,"No autorizado")}}
-        }
-        new data
+        new data {}
         do mov.prepareView(db,params,data)
         return data
     }

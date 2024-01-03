@@ -2,9 +2,7 @@
 #!
 module "controller"
 {
-    #include "lib.dk"
-
-    switch @@(@_GET,"$_view")
+    switch @@(@http_context,"$request/get/_view")
     {
         case "movimientos"
         {

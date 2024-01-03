@@ -2,40 +2,6 @@
 #!
 module "lib.dk"
 {
-    hoy::fmt
-    {
-        return date_str(now(),str(fmt))
-    }
-
-    date_format::str,fmt
-    {
-        fecha = trim(str(str))
-        formato = trim(str(fmt))
-
-        if fecha == "" { return "" }
-        if formato == "" { formato = "yyyy-MM-ddTHH:mm:ss" }
-
-        ref datetime = str2dt(fecha)
-        fecha = date_str(datetime,formato)
-
-        return fecha
-
-        exception { return "" /* do rise_error(99,"Debe proporcionar una cadena de fecha con un formato válido.") */ }
-    }
-
-    iniciar_post_get::
-    {
-        if not(isset("@http_context")) && isset("@crud_context") { ref @http_context = ifnull(@@(@crud_context,"&http"),record.create()) }
-
-        ref @_GET = ifnull(@@(@http_context,"&request/get"),record.create())
-        ref @_POST = ifnull(@@(@http_context,"&request/post"),record.create())
-        
-        if list.count(list.create_from_fields(@_POST)) < 1 {
-			ref @_POST = from.json(field.dstr(@http_context,"request/post_string","{}"))
-		}
-    }
-    do iniciar_post_get()
-
     listarTiposDocumentos::
     {
         new params
@@ -66,11 +32,11 @@ module "lib.dk"
             new member "attributes"
             {
                 @"class": "form-select form-select-sm rounded-0"
-                @"name": "cuenta"
+                @"name": "icuenta"
             }
             @"value_field": "sys_pk"
             @"text_field": "nombre"
-            @"selected": @("$input/cuenta")
+            @"selected": @("$input/icuenta")
         }
 
         do uie.dbSelect(params)
@@ -87,11 +53,11 @@ module "lib.dk"
             new member "attributes"
             {
                 @"class": "form-select form-select-sm rounded-0"
-                @"name": "categoria"
+                @"name": "icategoria"
             }
             @"value_field": "sys_pk"
             @"text_field": "descripcion"
-            @"selected": @("$input/categoria")
+            @"selected": @("$input/icategoria")
         }
 
         do uie.dbSelect(params)

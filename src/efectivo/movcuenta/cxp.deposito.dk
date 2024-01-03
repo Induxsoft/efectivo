@@ -7,7 +7,8 @@ module "form.dk"
     #include "uielements.dkl"
     #include "../_lib/icons.dk"
     #include "../_lib/config.dk"
-    #include "lib.dk"
+    #include "../_lib/lib.dk"
+    #include "./html.selects.dk"
 
     do @context.begin(@crud_context)
     
@@ -47,20 +48,20 @@ module "form.dk"
                     ##
 
                     label(class="form-label" "for"="txt_referencia"){$"Referencia:"}
-                    input(type="text" class="form-control form-control-sm rounded-0" name="referencia" id="txt_referencia" value="#<@('$input/referencia')>" required="")
+                    input(type="text" class="form-control form-control-sm rounded-0" name="referencia" id="txt_referencia" value="#<form('referencia','tx',@null)>" required="")
 
                     label(class="form-label" "for"="txt_fecha"){$"Fecha:"}
-                    input(type="date" class="form-control form-control-sm rounded-0" name="fecha" id="txt_fecha" value="" required="#<@('$input/fecha')>")
+                    input(type="date" class="form-control form-control-sm rounded-0" name="fecha" id="txt_fecha" value="#<form('fecha','dt',@null)>" required="")
 
                     label(class="form-label" "for"="txt_aplicacion"){$"Fecha de aplicación:"}
-                    input(type="date" class="form-control form-control-sm rounded-0" name="aplicacion" id="txt_aplicacion" value="#<@('$input/aplicacion')>" required="")
+                    input(type="date" class="form-control form-control-sm rounded-0" name="faplicacion" id="txt_aplicacion" value="#<form('faplicacion','dt',@null)>" required="")
 
                     label(class="form-label" "for"="txt_importe"){$"Importe:"}
-                    input(type="number" class="form-control form-control-sm rounded-0" name="importe" min="0" step="0.000001" id="txt_importe" value="#<@('$input/importe')>" required="")
+                    input(type="number" class="form-control form-control-sm rounded-0" name="importe" min="1" step="0.000001" id="txt_importe" value="#<form('importe','nm',@null)>" required="")
 
                     label(class="form-label" "for"="txt_concepto"){$"Concepto:"}
                     textarea(class="form-control rounded-0" name="concepto" id="txt_concepto")
-                    { $"#<@('$input/concepto')>" }
+                    { $"#<form('concepto','tx',@null)>" }
 
                     div(class="form-check") {
                         input(class="form-check-input" type="checkbox" name="conciliado" id="ch_conciliado" checked="checked")
