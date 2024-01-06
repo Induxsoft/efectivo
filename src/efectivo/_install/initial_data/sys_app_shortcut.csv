@@ -1,3 +1,2 @@
 "id","title","icon96x96","src","_blank","appid","cat"
-"efectivo.bancos.list","Bancos","/$/efectivo/img/icons/bancos-96x96.png","/!/efectivo/bancos/","0","efectivo.bancos.v1","0020"
-"efectivo.chequeras.list","Cuentas de cheque","/$/efectivo/img/icons/chequeras-96x96.png","/!/efectivo/cuentas/","0","efectivo.chequeras.v1","0020"
+"efectivo.chequeras.list","Cuentas bancarias","/$/efectivo/img/icons/chequeras-96x96.png","/!/efectivo/cuentas/","0","efectivo.chequeras.v1","0020"
