@@ -6,76 +6,129 @@ module "list.dk"
     #include "serialize.dkh"
     #include "../_lib/icons.dk"
     #include "../_lib/config.dk"
+    #include "uielements.v12.dkl"
 
     do @context.begin(@crud_context)
+    ref @http_context = @('&http')
+    ref get = @@(@http_context,"&request/get")
     ref cCheques = ifnull(@('&.'),list.create())
+
+    for i = 0; i < list.count(cCheques)
+    {
+        ref cheque = list.obj(cCheques,i)
+        link_nombre = replace(@MOV_MOVIMIENTOS,'@cuenta',@@(cheque,'$sys_pk'))
+        link_editar = "./" + str(@@(cheque,'sys_pk')) + "/"
+
+        cheque<"saldo">: format(@@(cheque,'#saldo'),'$ #,0.00')
+        cheque<"link_nombre">: ftext('<a href="#<link_nombre>" style="text-decoration: none;">#<@@(cheque,"$nombre")></a>')
+        cheque<"_actions">: ftext('
+            <div class="no-print" style="display:flex;justify-content:center;align-items: center; gap: 6px;">
+                <a href="#<link_editar>" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
+                <button style="cursor:pointer; border: none; padding: 4px 8px; background-color: #F5F5F5; color: #000;" onclick="InduxsoftCrudlModel.Delete(#<@@(cheque,"sys_pk")>)">Eliminar</button>
+            </div>
+        ')
+    }
+
+    new table_definition
+    {
+        @"datatable*": cCheques
+        @"leyend": "Mostrando las primeras # cuentas ordenadas por nombre"
+        member @"columns"
+        {
+            member @"link_nombre" { @"caption":"Nombre" }
+            member @"banco" { @"caption":"Banco" }
+            member @"numcuenta" { @"caption":"Número de cuenta" }
+            member @"clabe" { @"caption":"Clabe" }
+            member @"saldo" { @"caption":"Saldo" }
+            member @"divisa" { @"caption":"Divisa" }
+            member @"notas" { @"caption":"Notas" }
+            member @"_actions" { @"caption":"Acciones" }
+        }
+    }
+
+    header_act::
+    { 
+        #$ 
+        a(href="#<@CHQ_AGREGAR>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Agregar"}
+        a(href="#<@EFC_BANCO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Bancos"}
+        a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Realizar depósito"}
+        a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Realizar retiro"}
+        a(href="#<@MOV_TRASPASO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Realizar transferencia"}
+    }
+    #! point general_act to header_act
     
     #$
-    div(class="container")
+    #$ div(class="container-fluid p-0")
     {
         link(href="#<@CSS_MAIN>" rel="stylesheet")
 
-        div(class="row container-section m-0 px-0 py-2 my-2 border-bottom sticky-top bg-white" id="main_action_bar")
+        #! do uie.printMainBar(general_act, "Cuentas de cheque", @true, "")
+
+        #$ div(id="work_area" class="container-section mt-1 p-2 pt-0")
         {
-            div(class="col-4 d-flex align-items-center p-0") { h1(class="h5 text-primary tex-no-break m-0"){$"Cuentas de cheque"} }
-            div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
+            p{$"#<@('$error/message')>"}
+            form(action="./" method="GET" id="form_filter" class="no-print mb-1")
             {
-                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
-                a(href="#<@CHQ_AGREGAR>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Agregar"}
-                a(href="#<@EFC_BANCO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Bancos"}
-                a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar depósito"}
-                a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar retiro"}
-                a(href="#<@MOV_TRASPASO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar transferencia"}
+                "filter-text"(
+                    "id"="micontrol10"
+                    "text-field"="s"
+                    "placeholder"="Nombre, banco, número de cuenta o clabe"
+                    "form"="#form_filter"
+                    "value"="#<@@(get,'$s')>"
+                    "auto-submit"="true"
+                    "class"="w-100"
+                ){$""}
             }
+            #! do uie.dbeditable(table_definition,"table_cuentas_de_cheques")
         }
 
-        div(class="table-responsive mt-2")
-        {
-            table(class="table table-sm table-striped table-bordered")
-            {
-                thead
-                {
-                    tr
-                    {
-                        th{$"#"}
-                        th{$"Nombre"}
-                        th{$"Banco"}
-                        th{$"Número de cuenta"}
-                        th{$"Clabe"}
-                        th{$"Saldo"}
-                        th{$"Divisa"}
-                        th{$"Notas"}
-                        th{$"Acciones"}
-                    }
-                }
-                tbody
-                {
-                    #!
-                    go foreach.lobj(index:i, value:cheque) with(cCheques)
-                    {
-                        row = (i+1)
-                        #$
-                        tr
-                        {
-                            td{$"#<row>"}
-                            td{a(href="#<replace(@MOV_MOVIMIENTOS,'@cuenta',@@(cheque,'$sys_pk'))>"){$"#<@@(cheque,'$nombre')>"}}
-                            td{$"#<@@(cheque,'$banco')>"}
-                            td{$"#<@@(cheque,'$numcuenta')>"}
-                            td{$"#<@@(cheque,'$clabe')>"}
-                            td{$"#<format(@@(cheque,'#saldo'),'$ #,0.00')>"}
-                            td{$"#<@@(cheque,'$divisa')>"}
-                            td{$"#<@@(cheque,'$notas')>"}
-                            td
-                            {
-                                a(class="btn btn-primary btn-xs m-1" href="./#<@@(cheque,'sys_pk')>/"){"Editar"}
-                                button(class="btn btn-danger btn-xs m-1" onclick="InduxsoftCrudlModel.Delete(#<@@(cheque,'sys_pk')>)"){"Eliminar"}
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // div(class="table-responsive mt-2")
+        // {
+        //     table(class="table table-sm table-striped table-bordered")
+        //     {
+        //         thead
+        //         {
+        //             tr
+        //             {
+        //                 th{$"#"}
+        //                 th{$"Nombre"}
+        //                 th{$"Banco"}
+        //                 th{$"Número de cuenta"}
+        //                 th{$"Clabe"}
+        //                 th{$"Saldo"}
+        //                 th{$"Divisa"}
+        //                 th{$"Notas"}
+        //                 th{$"Acciones"}
+        //             }
+        //         }
+        //         tbody
+        //         {
+        //             #!
+        //             go foreach.lobj(index:i, value:cheque) with(cCheques)
+        //             {
+        //                 row = (i+1)
+        //                 #$
+        //                 tr
+        //                 {
+        //                     td{$"#<row>"}
+        //                     td{a(href="#<replace(@MOV_MOVIMIENTOS,'@cuenta',@@(cheque,'$sys_pk'))>"){$"#<@@(cheque,'$nombre')>"}}
+        //                     td{$"#<@@(cheque,'$banco')>"}
+        //                     td{$"#<@@(cheque,'$numcuenta')>"}
+        //                     td{$"#<@@(cheque,'$clabe')>"}
+        //                     td{$"#<format(@@(cheque,'#saldo'),'$ #,0.00')>"}
+        //                     td{$"#<@@(cheque,'$divisa')>"}
+        //                     td{$"#<@@(cheque,'$notas')>"}
+        //                     td
+        //                     {
+        //                         a(class="btn btn-primary btn-xs m-1" href="./#<@@(cheque,'sys_pk')>/"){"Editar"}
+        //                         button(class="btn btn-danger btn-xs m-1" onclick="InduxsoftCrudlModel.Delete(#<@@(cheque,'sys_pk')>)"){"Eliminar"}
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        p{$"#<@('$error/message')>"}
+        // p{$"#<@('$error/message')>"}
     }
 }

@@ -18,7 +18,6 @@ module "form.dk"
         {
             @"class": "form-select form-select-sm rounded-0"
             @"name": "ibanco"
-            @"required": ""
         }
         @"value_field": "sys_pk"
         @"text_field": "nombre"
@@ -45,7 +44,7 @@ module "form.dk"
     {
         div(class="row container-section m-0 px-0 py-2 my-2 border-bottom sticky-top bg-white" id="main_action_bar")
         {
-            div(class="col-4 d-flex align-items-center p-0") { h1(class="h5 text-primary tex-no-break m-0"){$"Chequera"} }
+            div(class="col-4 d-flex align-items-center p-0") { h5(class="tex-no-break m-0"){$"Chequera"} }
             div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
             {
                 a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
@@ -54,41 +53,58 @@ module "form.dk"
             }
         }
 
-        div(class="row")
+        div(class="")
         {
-            div(class="col-lg-4 col-md-8 col-sm-12")
+            div(class="")
             {
+                p{$"#<@('$error/message')>"}
+
                 form(action="." method="POST" id="form_chequera")
                 {
                     input(type="hidden" name="sys_recver" value="#<@('#./sys_recver')>")
-                
-                    label(class="form-label" "for"="txt_nombre"){$"Nombre:" sup{$"*"}}
-                    input(type="text" class="form-control form-control-sm rounded-0" name="nombre" maxlength="25" id="txt_nombre" value="#<@('$./nombre')>" required="")
+                    
+                    div(class="row mb-2")
+                    {
+                        div(class="col-12 col-sm-4")
+                        {
+                            small(class="form-label fw-bold" "for"="txt_nombre"){$"Nombre:"}
+                            input(type="text" class="form-control form-control-sm rounded-0" name="nombre" maxlength="25" id="txt_nombre" value="#<@('$./nombre')>" required="")
+                        }
+                        div(class="col-12 col-sm-4")
+                        {
+                            small(class="form-label" "for"="sel_banco"){$"Banco:"}
+                            ##
+                            do uie.dbSelect(sel_banco)
+                            ##
+                        }
+                        div(class="col-12 col-sm-4")
+                        {
+                            small(class="form-label" "for"="txt_numcuenta"){$"Número de cuenta:"}
+                            input(type="text" class="form-control form-control-sm rounded-0" name="numcuenta" maxlength="25" id="txt_numcuenta" value="#<@('$./numcuenta')>")
+                        }
+                    }
+                    div(class="row mb-2")
+                    {
+                        div(class="col-12 col-sm-4")
+                        {
+                            small(class="form-label" "for"="txt_clabe"){$"Clabe:"}
+                            input(type="text" class="form-control form-control-sm rounded-0" name="clabe" maxlength="18" id="txt_clabe" value="#<@('$./clabe')>")
+                        }
+                        div(class="col-12 col-sm-4")
+                        {
+                            small(class="form-label fw-bold" "for"="sel_divisa"){$"Divisa:"}
+                            ##
+                            do uie.dbSelect(sel_divisa)
+                            ##
+                        }
+                    }
 
-                    label(class="form-label" "for"="sel_banco"){$"Banco:" sup{$"*"}}
-                    ##
-                    do uie.dbSelect(sel_banco)
-                    ##
-
-                    label(class="form-label" "for"="txt_numcuenta"){$"Número de cuenta:" sup{$"*"}}
-                    input(type="text" class="form-control form-control-sm rounded-0" name="numcuenta" maxlength="25" id="txt_numcuenta" value="#<@('$./numcuenta')>" required="")
-
-                    label(class="form-label" "for"="txt_clabe"){$"Clabe:" sup{$"*"}}
-                    input(type="text" class="form-control form-control-sm rounded-0" name="clabe" maxlength="18" id="txt_clabe" value="#<@('$./clabe')>" required="")
-
-                    label(class="form-label" "for"="sel_divisa"){$"Divisa:" sup{$"*"}}
-                    ##
-                    do uie.dbSelect(sel_divisa)
-                    ##
-
-                    label(class="form-label" "for"="txt_notas"){$"Notas:"}
+                    small(class="form-label" "for"="txt_notas"){$"Notas:"}
                     textarea(class="form-control rounded-0" name="notas" maxlength="2048" id="txt_notas")
                     { $"#<@('$./notas')>" }
                 }
             }
         }
-
-        p{$"#<@('$error/message')>"}
 
         div
         {

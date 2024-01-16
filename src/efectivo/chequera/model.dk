@@ -42,7 +42,9 @@ module "model"
         INNER JOIN banco AS b ON b.sys_pk = c.ibanco
         LEFT JOIN movcuenta AS m ON m.icuenta = c.sys_pk
     WHERE NOT IFNULL(c.sys_deleted,0)
-    GROUP BY c.sys_pk"
+        AND IF(IFNULL(@s,'')='', true, c.nombre LIKE CONCAT('%',@s,'%') OR b.nombre LIKE CONCAT('%',@s,'%') OR c.numcuenta LIKE CONCAT('%',@s,'%') OR c.clabe LIKE CONCAT('%',@s,'%'))
+    GROUP BY c.sys_pk
+    ORDER BY c.nombre;"
 
     @create_fields = "sys_guid,sys_dtcreated,sys_timestamp,nombre,ibanco,numcuenta,clabe,idivisa,notas"
     @update_fields = "sys_timestamp,sys_recver,nombre,ibanco,numcuenta,clabe,idivisa,notas"
