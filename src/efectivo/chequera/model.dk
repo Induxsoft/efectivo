@@ -2,6 +2,8 @@
 #!
 module "model"
 {
+    #include "../_lib/config.dk"
+
     @table_name = "chequera"
 
     @read_query = "
@@ -24,7 +26,7 @@ module "model"
     WHERE c.sys_pk = @_entity_id
         AND NOT IFNULL(c.sys_deleted,0);"
 
-    @list_query = "
+    @list_query = ftext("
     SELECT
         c.sys_pk,
         c.sys_guid,
@@ -44,7 +46,8 @@ module "model"
     WHERE NOT IFNULL(c.sys_deleted,0)
         AND IF(IFNULL(@s,'')='', true, c.nombre LIKE CONCAT('%',@s,'%') OR b.nombre LIKE CONCAT('%',@s,'%') OR c.numcuenta LIKE CONCAT('%',@s,'%') OR c.clabe LIKE CONCAT('%',@s,'%'))
     GROUP BY c.sys_pk
-    ORDER BY c.nombre;"
+    ORDER BY c.nombre
+    LIMIT #<@default_max_rows>;")
 
     @create_fields = "sys_guid,sys_dtcreated,sys_timestamp,nombre,ibanco,numcuenta,clabe,idivisa,notas"
     @update_fields = "sys_timestamp,sys_recver,nombre,ibanco,numcuenta,clabe,idivisa,notas"

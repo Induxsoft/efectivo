@@ -69,4 +69,7 @@ module
 			- Verificar si el código del permiso es correcto
 	*/
 	@CXP_SEC_PRIVID_ESTADO_CUENTA_BANCARIA="FX1-72-00-000"
+
+	// Número máximo de filas a mostrar en lista
+	@default_max_rows=250
 }

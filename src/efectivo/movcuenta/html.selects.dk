@@ -10,8 +10,9 @@ module "lib.dk"
             @"id": "sel_documento"
             new member "attributes"
             {
-                @"class": "form-select form-select-sm rounded-0"
+                @"class": "induxsoft-form-select"
                 @"name": "documento"
+                @"required": ""
             }
             @"value_field": "id"
             @"text_field": "const"
@@ -31,8 +32,9 @@ module "lib.dk"
             @"id": "sel_cuenta"
             new member "attributes"
             {
-                @"class": "form-select form-select-sm rounded-0"
+                @"class": "induxsoft-form-select"
                 @"name": "icuenta"
+                @"required": ""
             }
             @"value_field": "sys_pk"
             @"text_field": "nombre"
@@ -52,8 +54,9 @@ module "lib.dk"
             @"id": "sel_categoria"
             new member "attributes"
             {
-                @"class": "form-select form-select-sm rounded-0"
+                @"class": "induxsoft-form-select"
                 @"name": "icategoria"
+                @"required": ""
             }
             @"value_field": "sys_pk"
             @"text_field": "descripcion"
@@ -73,7 +76,7 @@ module "lib.dk"
             @"id": "sel_banco"
             new member "attributes"
             {
-                @"class": "form-select"
+                @"class": "induxsoft-form-select"
                 @"name": "ibanco"
             }
             @"value_field": "sys_pk"
@@ -94,7 +97,7 @@ module "lib.dk"
             @"id": "sel_divisa"
             new member "attributes"
             {
-                @"class": "form-select"
+                @"class": "induxsoft-form-select"
                 @"name": "idivisa"
             }
             @"value_field": "sys_pk"

@@ -10,13 +10,80 @@ module "form.dk"
     #include "../_lib/lib.dk"
 
     do @context.begin(@crud_context)
+
+    new def_cta_origen
+    {
+        @"datatable*": ifnull(@("&./cuentas"),list.create())
+        @"id": "sel_cuenta_origen"
+        new member "attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "cuenta_origen"
+        }
+        @"value_field": "sys_pk"
+        @"text_field": "nombre"
+        @"selected": form("cuenta_origen","nm",@null)
+    }
+    new def_cta_destino
+    {
+        @"datatable*": ifnull(@("&./cuentas"),list.create())
+        @"id": "sel_cuenta_destino"
+        new member "attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "cuenta_destino"
+        }
+        @"value_field": "sys_pk"
+        @"text_field": "nombre"
+        @"selected": form("cuenta_destino","nm",@null)
+    }
+    new def_categoria
+    {
+        @"datatable*": ifnull(@("&./categorias"),list.create())
+        @"id": "sel_categoria"
+        new member "attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "icategoria"
+            @"required": ""
+        }
+        @"value_field": "sys_pk"
+        @"text_field": "descripcion"
+        @"selected": form("icategoria","nm",@null)
+    }
+    new def_doc_retiro
+    {
+        @"datatable*": ifnull(@("&./documentos"),list.create())
+        @"id": "sel_documento_retiro"
+        new member "attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "documento_retiro"
+        }
+        @"value_field": "id"
+        @"text_field": "const"
+        @"selected": form("documento_retiro","nm",@null)
+    }
+    new def_doc_deposito
+    {
+        @"datatable*": ifnull(@("&./documentos"),list.create())
+        @"id": "sel_documento_deposito"
+        new member "attributes"
+        {
+            @"class": "induxsoft-form-select"
+            @"name": "documento_deposito"
+        }
+        @"value_field": "id"
+        @"text_field": "const"
+        @"selected": form("documento_deposito","nm",@null)
+    }
     
     #$
     div(class="container")
     {
         div(class="row container-section m-0 px-0 py-2 my-2 border-bottom sticky-top bg-white" id="main_action_bar")
         {
-            div(class="col-4 d-flex align-items-center p-0") { h1(class="h5 text-primary tex-no-break m-0"){$"Trasferencia"} }
+            div(class="col-4 d-flex align-items-center p-0") { h5(class="tex-no-break m-0"){$"Trasferencia"} }
             div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
             {
                 a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
@@ -25,130 +92,98 @@ module "form.dk"
             }
         }
 
-        div(class="row")
+        div(id="work_area" class="container-section")
         {
-            div(class="col-lg-4 col-md-8 col-sm-12")
+            p{$"#<@('$error/message')>"}
+
+            form(action="." method="POST" id="form_traspaso")
             {
-                form(action="." method="POST" id="form_traspaso")
+                div(class="row mb-2")
                 {
-                    label(class="form-label" "for"="sel_cuenta_origen"){$"Cuenta origen:"}
-                    ##
-                    new params
+                    div(class="col-12 col-sm-6")
                     {
-                        @"datatable*": ifnull(@("&./cuentas"),list.create())
-                        @"id": "sel_cuenta_origen"
-                        new member "attributes"
-                        {
-                            @"class": "form-select form-select-sm rounded-0"
-                            @"name": "cuenta_origen"
-                        }
-                        @"value_field": "sys_pk"
-                        @"text_field": "nombre"
-                        @"selected": form("cuenta_origen","nm",@null)
+                        small(class="form-label" "for"="sel_cuenta_origen"){$"Cuenta origen:"}
+                        ##
+                        do uie.dbSelect(def_cta_origen)
+                        ##
                     }
-                    do uie.dbSelect(params)
-                    ##
-
-                    label(class="form-label" "for"="sel_cuenta_destino"){$"Cuenta destino:"}
-                    ##
-                    new params
+                    div(class="col-12 col-sm-6")
                     {
-                        @"datatable*": ifnull(@("&./cuentas"),list.create())
-                        @"id": "sel_cuenta_destino"
-                        new member "attributes"
-                        {
-                            @"class": "form-select form-select-sm rounded-0"
-                            @"name": "cuenta_destino"
-                        }
-                        @"value_field": "sys_pk"
-                        @"text_field": "nombre"
-                        @"selected": form("cuenta_destino","nm",@null)
+                        small(class="form-label" "for"="sel_cuenta_destino"){$"Cuenta destino:"}
+                        ##
+                        do uie.dbSelect(def_cta_destino)
+                        ##       
                     }
-                    do uie.dbSelect(params)
-                    ##
-
-                    label(class="form-label" "for"="sel_categoria"){$"Categoria:"}
-                    ##
-                    new params
+                }
+                div(class="row mb-2")
+                {
+                    div(class="col-12 col-sm-6")
                     {
-                        @"datatable*": ifnull(@("&./categorias"),list.create())
-                        @"id": "sel_categoria"
-                        new member "attributes"
-                        {
-                            @"class": "form-select form-select-sm rounded-0"
-                            @"name": "icategoria"
-                        }
-                        @"value_field": "sys_pk"
-                        @"text_field": "descripcion"
-                        @"selected": form("icategoria","nm",@null)
+                        small(class="form-label fw-bold" "for"="txt_referencia_retiro"){$"Referencia Retiro:"}
+                        input(type="text" class="induxsoft-form-control" name="referencia_retiro" id="txt_referencia_Retiro" value="#<form('referencia_retiro','tx',@null)>" required="")
                     }
-                    do uie.dbSelect(params)
-                    ##
-
-                    label(class="form-label" "for"="sel_documento_retiro"){$"Documento Retiro:"}
-                    ##
-                    new params
+                    div(class="col-12 col-sm-6")
                     {
-                        @"datatable*": ifnull(@("&./documentos"),list.create())
-                        @"id": "sel_documento_retiro"
-                        new member "attributes"
-                        {
-                            @"class": "form-select form-select-sm rounded-0"
-                            @"name": "documento_retiro"
-                        }
-                        @"value_field": "id"
-                        @"text_field": "const"
-                        @"selected": form("documento_retiro","nm",@null)
+                        small(class="form-label fw-bold" "for"="txt_referencia_deposito"){$"Referencia Depósito:"}
+                        input(type="text" class="induxsoft-form-control" name="referencia_deposito" id="txt_referencia_deposito" value="#<form('referencia_deposito','tx',@null)>" required="")
                     }
-                    do uie.dbSelect(params)
-                    ##
-
-                    label(class="form-label" "for"="sel_documento_deposito"){$"Documento Depósito:"}
-                    ##
-                    new params
+                }
+                div(class="row mb-2")
+                {
+                    div(class="col-12 col-sm-4")
                     {
-                        @"datatable*": ifnull(@("&./documentos"),list.create())
-                        @"id": "sel_documento_deposito"
-                        new member "attributes"
-                        {
-                            @"class": "form-select form-select-sm rounded-0"
-                            @"name": "documento_deposito"
-                        }
-                        @"value_field": "id"
-                        @"text_field": "const"
-                        @"selected": form("documento_deposito","nm",@null)
+                        small(class="form-label fw-bold" "for"="sel_categoria"){$"Categoria:"}
+                        ##
+                        do uie.dbSelect(def_categoria)
+                        ##
                     }
-                    do uie.dbSelect(params)
-                    ##
-
-                    label(class="form-label" "for"="txt_referencia_retiro"){$"Referencia Retiro:"}
-                    input(type="text" class="form-control form-control-sm rounded-0" name="referencia_retiro" id="txt_referencia_Retiro" value="#<form('referencia_retiro','tx',@null)>" required="")
-
-                    label(class="form-label" "for"="txt_referencia_deposito"){$"Referencia Depósito:"}
-                    input(type="text" class="form-control form-control-sm rounded-0" name="referencia_deposito" id="txt_referencia_deposito" value="#<form('referencia_deposito','tx',@null)>" required="")
-
-                    label(class="form-label" "for"="txt_fecha"){$"Fecha:"}
-                    input(type="date" class="form-control form-control-sm rounded-0" name="fecha" id="txt_fecha" value="#<form('fecha','dt',@null)>" required="")
-
-                    label(class="form-label" "for"="txt_aplicacion"){$"Fecha de aplicación:"}
-                    input(type="date" class="form-control form-control-sm rounded-0" name="faplicacion" id="txt_aplicacion" value="#<form('faplicacion','dt',@null)>" required="")
-
-                    label(class="form-label" "for"="txt_importe"){$"Importe:"}
-                    input(type="number" class="form-control form-control-sm rounded-0" name="importe" min="1" step="0.000001" id="txt_importe" value="#<form('importe','nm',@null)>" required="")
-
-                    label(class="form-label" "for"="txt_concepto"){$"Concepto:"}
-                    textarea(class="form-control rounded-0" name="concepto" id="txt_concepto")
-                    { $"#<form('concepto','tx',@null)>" }
-
-                    div(class="form-check") {
-                        input(class="form-check-input" type="checkbox" name="conciliado" id="ch_conciliado" checked="checked")
-                        label(class="form-check-label" "for"="ch_conciliado"){$"Conciliado"}
+                    div(class="col-12 col-sm-4")
+                    {
+                        small(class="form-label fw-bold" "for"="sel_documento_retiro"){$"Documento Retiro:"}
+                        ##
+                        do uie.dbSelect(def_doc_retiro)
+                        ##
                     }
+                    div(class="col-12 col-sm-4")
+                    {
+                        small(class="form-label fw-bold" "for"="sel_documento_deposito"){$"Documento Depósito:"}
+                        ##
+                        do uie.dbSelect(def_doc_deposito)
+                        ##
+                    }
+                }
+                div(class="row mb-2")
+                {
+                    div(class="col-12 col-sm-4")
+                    {
+                        small(class="form-label" "for"="txt_fecha"){$"Fecha:"}
+                        input(type="date" class="induxsoft-form-control" name="fecha" id="txt_fecha" value="#<form('fecha','dt',@null)>" required="")
+                    }
+                    div(class="col-12 col-sm-4")
+                    {
+                        small(class="form-label" "for"="txt_aplicacion"){$"Fecha de aplicación:"}
+                        input(type="date" class="induxsoft-form-control" name="faplicacion" id="txt_aplicacion" value="#<form('faplicacion','dt',@null)>" required="")
+                    }
+                }
+                div(class="row mb-2")
+                {
+                    div(class="col-12 col-sm-4")
+                    {
+                        small(class="form-label" "for"="txt_importe"){$"Importe:"}
+                        input(type="number" class="induxsoft-form-control" name="importe" min="1" step="0.000001" id="txt_importe" value="#<form('importe','nm',@null)>" required="")
+                    }
+                }
+
+                small(class="form-label fw-bold" "for"="txt_concepto"){$"Concepto:"}
+                textarea(class="induxsoft-form-control" name="concepto" id="txt_concepto" required="")
+                { $"#<form('concepto','tx',@null)>" }
+
+                div(class="form-check mt-2") {
+                    input(class="form-check-input" type="checkbox" name="conciliado" id="ch_conciliado" checked="checked")
+                    small(class="form-check-label" "for"="ch_conciliado"){$"Conciliado"}
                 }
             }
         }
-
-        p{$"#<@('$error/message')>"}
 
         div
         {

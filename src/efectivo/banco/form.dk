@@ -14,7 +14,7 @@ module "form.dk"
     {
         div(class="row container-section m-0 px-0 py-2 my-2 border-bottom sticky-top bg-white" id="main_action_bar")
         {
-            div(class="col-4 d-flex align-items-center p-0") { h1(class="h5 text-primary tex-no-break m-0"){$"Banco"} }
+            div(class="col-4 d-flex align-items-center p-0") { h5(class="tex-no-break m-0"){$"Banco"} }
             div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
             {
                 a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
@@ -23,28 +23,33 @@ module "form.dk"
             }
         }
 
-        div(class="row")
+        div(id="work_area" class="container-section")
         {
-            div(class="col-lg-4 col-md-8 col-sm-12")
+            p{$"#<@('$error/message')>"}
+
+            form(action="." method="POST" id="form_banco")
             {
-                form(action="." method="POST" id="form_banco")
+                input(type="hidden" name="sys_recver" value="#<@('#./sys_recver')>")
+
+                div(class="row mb-2")
                 {
-                    input(type="hidden" name="sys_recver" value="#<@('#./sys_recver')>")
-                
-                    label(class="form-label" "for"="txt_nombre"){$"Nombre:" sup{$"*"}}
-                    input(type="text" class="form-control form-control-sm rounded-0" name="nombre" minlength="3" maxlength="50" id="txt_nombre" value="#<@('$./nombre')>" required="")
-
-                    label(class="form-label" "for"="txt_website"){$"Website:"}
-                    input(type="text" class="form-control form-control-sm rounded-0" name="website" maxlength="150" id="txt_website" value="#<@('$./website')>")
-
-                    label(class="form-label" "for"="txt_notas"){$"Notas:"}
-                    textarea(class="form-control rounded-0" name="notas" maxlength="2048" id="txt_notas")
-                    { $"#<@('$./notas')>" }
+                    div(class="col-12 col-sm-6")
+                    {
+                        small(class="form-label fw-bold" "for"="txt_nombre"){$"Nombre:"}
+                        input(type="text" class="induxsoft-form-control" name="nombre" minlength="3" maxlength="50" id="txt_nombre" value="#<@('$./nombre')>" required="")
+                    }
+                    div(class="col-12 col-sm-6")
+                    {
+                        small(class="form-label" "for"="txt_website"){$"Website:"}
+                        input(type="text" class="induxsoft-form-control" name="website" maxlength="150" id="txt_website" value="#<@('$./website')>")
+                    }
                 }
+
+                small(class="form-label" "for"="txt_notas"){$"Notas:"}
+                textarea(class="induxsoft-form-control" name="notas" maxlength="2048" id="txt_notas")
+                { $"#<@('$./notas')>" }
             }
         }
-
-        p{$"#<@('$error/message')>"}
 
         div
         {
