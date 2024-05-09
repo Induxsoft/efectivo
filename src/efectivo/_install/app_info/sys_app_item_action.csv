@@ -6,3 +6,7 @@
 "GD14","Depósito","Depósito","","/!/efectivo/movcuenta/_new/deposito/","0","efectivo.cuentas","DET019","0","action"
 "GD15","Retiro","Retiro","","/!/efectivo/movcuenta/_new/retiro/","0","efectivo.cuentas","DET019","0","action"
 "GD16","Traspaso","Traspaso","","/!/efectivo/movcuenta/_new/traspaso/","0","efectivo.cuentas","DET019","0","action"
+"GD20","Confirmar movimiento","Confirmar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","0","action"
+"GD21","Conciliar movimiento","Conciliar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","0","action"
+"GD22","Auditar movimiento","Auditar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","0","action"
+"GD23","Cancelar movimiento","Cancelar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","0","action"

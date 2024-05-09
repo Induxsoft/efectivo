@@ -5,7 +5,9 @@ module ""
     #include "functions.dkh"
     #include "serialize.dkh"
     #include "dbr.dkh"
-    #include "../_lib/config.dk"
+    #include "../../_lib/config.dk"
+    #include "../../_lib/lib.dk"
+    #include "dbr.security.dkl"
 
     http_cors::
 	{
@@ -41,7 +43,7 @@ module ""
 
 		return @DB
 	}
-
+    
     do http_cors()
 
 	go api_base_service(responseJSONdata:response)
@@ -62,10 +64,10 @@ module ""
 
                 switch tolower(@@(postData,"act"))
                 {
-                    case "confirmar"{do mov.confirmar(db,getData,postData)}
-                    case "conciliar"{do mov.conciliar(db,getData,postData)}
-                    case "auditar"{do mov.auditar(db,getData,postData)}
-                    case "cancelar"{do mov.cancelar(db,getData,postData)}
+                    case "confirmar"{ref data_response= mov.confirmar(db,getData,postData)}
+                    case "conciliar"{ref data_response=  mov.conciliar(db,getData,postData)}
+                    case "auditar"{ref data_response=  mov.auditar(db,getData,postData)}
+                    case "cancelar"{ref data_response=  mov.cancelar(db,getData,postData)}
                     case "contabilizar"{do mov.contabilizar(db,getData,postData)}
                     case "upload"{do mov.upload(db,getData,postData)}
                     case "getadjuntos"{ref data_response=mov.getAdjuntos(db,getData,postData)}

@@ -30,19 +30,18 @@ module "list.dk"
     for i = 0; i < @count(Movimientos)
     {
         ref mov=@item(Movimientos,i)
+        mov<"_index_">:i
         if not(@@(mov,"#cancelado"))
         {
             jsonmov=to.json(mov)
-            mov<"btn_confirmado">: "<button class='' style='display:flex' onclick='mov.MovCuentaModal("+jsonmov+")'>Confirmación</button>"
-            mov<"fconciliado">:"<input type='checkbox' "+ifstr(@@(mov,"#conciliado"),"checked","")+"='true'  onchange='mov.changeCheck("+jsonmov+",0,event)'>"
-            mov<"fauditado">:"<input type='checkbox' "+ifstr(@@(mov,"#auditado"),"checked","")+"='true'  onchange='mov.changeCheck("+jsonmov+",1,event)'>"
-            mov<"fcancelado">:"<button onclick='mov.changeCheck("+jsonmov+",99)'>Cancelar</button>"
+            mov<"btn_confirmado">: "<button class='' style='display:flex' data='"+jsonmov+"' onclick='mov.MovCuentaModal(null,event)'>Confirmación</button>"
+            mov<"fconciliado">:"<input type='checkbox' id='check_conciliado' data='"+jsonmov+"' "+ifstr(@@(mov,"#conciliado"),"checked","")+"='true'  onchange='mov.changeCheck(null,0,event)'>"
+            mov<"fauditado">:"<input type='checkbox' id='check_auditado' data='"+jsonmov+"' "+ifstr(@@(mov,"#auditado"),"checked","")+"='true'  onchange='mov.changeCheck(null,1,event)'>"
+            mov<"fcancelado">:"<button data='"+jsonmov+"' onclick='mov.changeCheck(null,99,event)'>Cancelar</button>"
         }
-        
-
     }
     #$
-    div(class="container")
+    div(class="container-fluid")
     {
         #!
         #include "modals.dk"
@@ -104,6 +103,45 @@ module "list.dk"
                         ){$""}
                     }
                 }
+                div(class="d-flex align-items-center mt-2 d-block-sm")
+                {
+                    // label(class="ms-2"){" Confirmado"}
+                    select(id="confirmado" name="confirmado" class="induxsoft-form-select")
+                    {
+                        option(value="*" "#<ifstr(@('parameters/confirmado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('parameters/confirmado')=='1','selected','')>"="true"){"Confirmados"}
+                        option(value="0" "#<ifstr(@('parameters/confirmado')=='0','selected','')>"="true"){"Sin confirmar"}
+                    }
+
+                    // label(class="ms-2"){input(type="checkbox"  class="gap-2" id="conciliado" name="conciliado" )" Conciliado"}
+                    select(id="conciliado" name="conciliado" class="induxsoft-form-select")
+                    {
+                        option(value="*" "#<ifstr(@('parameters/conciliado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('parameters/conciliado')=='1','selected','')>"="true"){"Conciliados"}
+                        option(value="0" "#<ifstr(@('parameters/conciliado')=='0','selected','')>"="true"){"Sin conciliar"}
+                    }
+                    // label(class="ms-2"){input(type="checkbox" class="gap-2" id="auditado" name="auditado" )" Auditado"}
+                    select(id="auditado" name="auditado" class="induxsoft-form-select")
+                    {
+                        option(value="*" "#<ifstr(@('parameters/auditado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('parameters/auditado')=='1','selected','')>"="true"){"Auditados"}
+                        option(value="0" "#<ifstr(@('parameters/auditado')=='0','selected','')>"="true"){"Sin auditar"}
+                    }
+                    // label(class="ms-2"){input(type="checkbox" class="gap-2" id="contabilizado" name="contabilizado" )" Contabilizado"}
+                    select(id="contabilizado" name="contabilizado" class="induxsoft-form-select")
+                    {
+                        option(value="*" "#<ifstr(@('parameters/contabilizado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('parameters/contabilizado')=='1','selected','')>"="true"){"Contabilizados"}
+                        option(value="0" "#<ifstr(@('parameters/contabilizado')=='0','selected','')>"="true"){"Sin contabilizar"}
+                    }
+                    // label(class="ms-2"){input(type="checkbox" class="gap-2" id="cancelado" name="cancelado" )" Cancelado"}
+                    select(id="cancelado" name="cancelado" class="induxsoft-form-select")
+                    {
+                        option(value="*" "#<ifstr(@('parameters/cancelado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('parameters/cancelado')=='1','selected','')>"="true"){"Cancelados"}
+                        option(value="0" "#<ifstr(@('parameters/cancelado')=='0','selected','')>"="true"){"Sin cancelar"}
+                    }
+                }
             }
             hr{}
             table(class="table table-sm table-bordered")
@@ -123,11 +161,11 @@ module "list.dk"
                 {
                     tr
                     {
-                        td(class="text-end"){$"#<format(@@(Saldos,'#saldo_inicial'),FMT_MONEY)>"}
-                        td(class="text-end"){$"#<format(@@(Saldos,'#ingresos'),FMT_MONEY)>"}
-                        td(class="text-end"){$"#<format(@@(Saldos,'#egresos'),FMT_MONEY)>"}
-                        td(class="text-end"){$"#<format(@@(Saldos,'#saldo_alfinal'),FMT_MONEY)>"}
-                        td(class="text-end"){$"#<format(@@(Saldos,'#saldo_total'),FMT_MONEY)>"}
+                        td(class="text-end" id="saldo_inicial"){$"#<format(@@(Saldos,'#saldo_inicial'),FMT_MONEY)>"}
+                        td(class="text-end" id="ingresos"){$"#<format(@@(Saldos,'#ingresos'),FMT_MONEY)>"}
+                        td(class="text-end" id="egresos"){$"#<format(@@(Saldos,'#egresos'),FMT_MONEY)>"}
+                        td(class="text-end" id="saldo_alfinal"){$"#<format(@@(Saldos,'#saldo_alfinal'),FMT_MONEY)>"}
+                        td(class="text-end" id="saldo_total"){$"#<format(@@(Saldos,'#saldo_total'),FMT_MONEY)>"}
                     }
                 }
             }
@@ -172,6 +210,7 @@ module "list.dk"
         {
             $'
             mov.url_mov_cuenta="#<@_SERVICES_MOV_CUENTA>";
+            mov._entity_id=#<@("#parameters/_entity_id")>;
             '
         }
     }

@@ -61,15 +61,21 @@ module "model"
         params<"periodo"> : periodo
         params<"fd"> : first_day
 
-        sql_sinicial = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_inicial FROM movcuenta mov WHERE icuenta = @_entity_id 
-        #<@filter_range_fecha>
+        sql_sinicial = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_inicial FROM movcuenta mov 
+        WHERE icuenta = @_entity_id 
+            #<@filter_by_status>
+            #<@filter_range_fecha>
         AND DATE(aplicacion) < @fd AND NOT IFNULL(cancelado,0);"
+
         sql_i_e = "SELECT IFNULL(SUM(IFNULL(ingreso,0)),0) AS ingresos, IFNULL(SUM(IFNULL(egreso,0)),0) AS egresos FROM movcuenta mov
         WHERE icuenta = @_entity_id 
+            #<@filter_by_status>
             #<@filter_range_fecha>
         AND DATE(aplicacion) BETWEEN @fd AND LAST_DAY(@fd) AND NOT IFNULL(cancelado,0);"
+
         sql_stotal = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_total FROM movcuenta mov
         WHERE icuenta = @_entity_id 
+            #<@filter_by_status>
             #<@filter_range_fecha>
         AND NOT IFNULL(cancelado,0);"
 
@@ -94,10 +100,16 @@ module "model"
     }
     @filter_range_fecha="AND IF(IFNULL(@year,'')='', true, YEAR(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=@year)
             AND IF(IFNULL(@month,'')='', true, (YEAR(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=IFNULL(@year,YEAR(NOW())) AND MONTH(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=@month))
-            AND IF(IFNULL(@range,'-99')='-99', true, (DATE(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion)) BETWEEN DATE_ADD(NOW(), INTERVAL -"+str(@@(params,"#range"))+" DAY) AND NOW()))
+            AND IF(IFNULL(@range,'-99')='-99', true, (DATE(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion)) BETWEEN DATE_ADD(NOW(), INTERVAL - @range DAY) AND NOW()))
             AND IF(IFNULL(@datefrom,'')='', true, (DATE(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion)) BETWEEN DATE(@datefrom) AND DATE(@dateto)))
             AND IF(IFNULL(@fd,'')='', true, DATE(mov.aplicacion) BETWEEN @fd AND LAST_DAY(@fd))"
 
+    @filter_by_status="AND if(ifnull(@auditado,'*')='*',true,IFNULL(mov.auditado,0)=@auditado)
+        AND if(ifnull(@conciliado,'*')='*',true,IFNULL(mov.conciliado,0)=@conciliado)
+        AND if(ifnull(@contabilizado,'*')='*',true,IFNULL(mov.contabilizado,0)=@contabilizado)
+        AND if(ifnull(@confirmado,'*')='*',true,ifnull(mov.confirmado,0)=@confirmado)
+        AND if(ifnull(@cancelado,'*')='*',true,ifnull(mov.cancelado,0)=@cancelado)"
+        
     mov.obtenerMovimientosCuenta::&db,&params
     {
         if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ESTADO_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
@@ -136,11 +148,15 @@ module "model"
             if(IFNULL(mov.conciliado,0),'Sí','No')fconciliado,
             if(IFNULL(mov.contabilizado,0),'Sí','No')fcontabilizado,
             if(IFNULL(mov.cancelado,0),'Sí','No')fcancelado,
-            if(ifnull(mov.confirmado,0),'Sí','No')fconfirmado
+            if(ifnull(mov.confirmado,0),'Sí','No')fconfirmado,
+            mc.notas notas_mc,
+            mc.api_confirmacion,mc.api_referencia,mc.api_url
         FROM movcuenta AS mov
             INNER JOIN cdocumentos AS doc ON doc.id = mov.tipo
             INNER JOIN categoria AS cat ON cat.sys_pk = mov.icategoria
+            left join movcta_confirmacion mc on mov.sys_pk=mc.ref_mov
         WHERE mov.icuenta = @_entity_id
+            #<@filter_by_status>
             #<@filter_range_fecha>
         ORDER BY mov.aplicacion, mov.ingreso DESC, mov.egreso DESC
         "

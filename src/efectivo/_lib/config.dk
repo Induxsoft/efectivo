@@ -43,6 +43,7 @@ module
 	@URL_ADJUNTOS_MOVCUENTA="/$/efectivo/mov_cuenta/"
 	//#region url_servicios
 	@_SERVICES_MOV_CUENTA="/efectivo/_services/mov_cuenta/"
+	@MODEL_MOVCUENTA="efectivo/movcuenta/model.dk"
 	//#endregion
 	//* ======================================== [ AUTHORIZATIONS ]
 	

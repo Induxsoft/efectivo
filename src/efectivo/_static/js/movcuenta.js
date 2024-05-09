@@ -16,7 +16,20 @@ var mov=
         this.media_list=document.getElementById("media-list");
 
         this.adjuntos=document.getElementById("adjuntos");
-
+        this.form_filter=document.getElementById("form_filter");
+        
+        if(this.form_filter)
+        {
+            var fields=this.form_filter.querySelectorAll("select");
+            if(fields)
+            {
+                for (let i = 0; i < fields.length; i++) 
+                {
+                    const elm = fields[i];
+                    if(elm)elm.addEventListener("change",()=>{document.querySelector('#form_filter').submit();})
+                }
+            }
+        }
         if(this.btn_confirmar)this.btn_confirmar.addEventListener("click",
         ()=>
         {
@@ -29,7 +42,17 @@ var mov=
             data["auditado"]=this.check_auditar.checked;
             data["notas"]=this.notas?.value??"";
             
-            mov.service(mov.url_mov_cuenta,data,"confirmar");
+            mov.service(mov.url_mov_cuenta,data,"confirmar",
+            (result)=>
+            {
+                data.sys_recver=result.sys_recver_mov + 1;
+                data.notas_mc=result.notas??"";
+                mov.UpdateRow(data,mov.table_cuentas.CurrentRowIndex());
+
+                mov.changeValueData(data);
+                mov.hideModal("modal_entity_mov_cuenta");
+
+            });
         });
 
         this.table_cuentas.onTdPaint =(td,row,col,field)=>
@@ -57,6 +80,16 @@ var mov=
         {
             mov.SelectedElement(data);
         }
+
+        if(this.check_confirmar)this.check_confirmar.addEventListener("change",()=>
+        {   
+            if(!this.check_confirmar.checked)
+            {
+                this.notas.value="";
+                this.notas.setAttribute("disabled",true);
+            }
+            else{this.notas.removeAttribute("disabled");}
+        });
     },
     data_preview:null,
     SelectedElement(data)
@@ -80,7 +113,7 @@ var mov=
 		
 		window.open(data.url,"_blank");
 	},
-    DataRowSelected()
+    DataRowSelected(msg=true)
     {
         if(!this.table_cuentas)return;
 
@@ -92,8 +125,71 @@ var mov=
         }
         return this.table_cuentas.DataArray[row];
     },
+    changeValueData(row)
+    {
+        var fields=mov.table_cuentas?._getCurrentRow()?.querySelectorAll("input,button")??null;
+        if(!fields)return;
+        
+        for (let i = 0; i < fields.length; i++) 
+        {
+           var elm = fields[i];
+           console.log(elm);
+            if(elm)
+            {
+                console.log("12121212");
+                elm.removeAttribute("data");
+                elm.setAttribute("data",JSON.stringify(row));    
+            }
+        }
+    },
+    CancelRow(data=null)
+    {
+        if(!data)data=mov.DataRowSelected();
+         
+        if(!data)return;
+
+        data["fconciliado"]="No";
+        data["fcancelado"]="Sí";
+        data["fauditado"]="No";
+
+        if(data.conciliado??false)data["fconciliado"]="Sí";
+        if(data.cancelado??false)data["fcancelado"]="Sí";
+        if(data.auditado??false)data["fauditado"]="Sí";
+
+        data["btn_confirmado"]="";
+        var index=Number(data["_index_"]??0);
+        mov.UpdateRow(data,index);
+    },
+    UpdateRow(data,index)
+    {
+        mov.table_cuentas.DataArray[index]=data;
+        mov.table_cuentas.UpdateRow(index)
+    },
+    getFieldFormFilter()
+    {
+        var filters=this.form_filter.querySelectorAll("input,select");
+
+        var filter={}
+        for (let i = 0; i < filters.length; i++) 
+        {
+            const elm = filters[i];
+            if(elm)
+            {
+                if(elm.type=="checkbox")
+                {
+                    if(elm.checked)filter[elm.name]=elm.checked;
+                }
+                else{filter[elm.name]=elm.value;}
+                
+            }
+        }
+        return filter;
+    },
     changeCheck(data,act,event=null)
     {
+        var target=event.target??null;
+        if(!data && target)data=JSON.parse(target.getAttribute("data"));
+        
         var fact="conciliar";
         switch (act)
         {
@@ -104,9 +200,50 @@ var mov=
                 fact="cancelar"
                 break
         }
-        if(event)data["active"]=event.target.checked
-  
-        mov.service(mov.url_mov_cuenta,data,fact);
+        if(event)
+        {
+            event.stopPropagation();
+            data["active"]=event.target.checked;
+        }
+        data["_entity_id"]=mov._entity_id??0;
+        if(act==99)data["params"]=mov.getFieldFormFilter();
+
+        mov.service(mov.url_mov_cuenta,data,fact,
+        (result)=>
+        {
+            data.sys_recver=result.sys_recver +1 ;
+
+            if(target && act!=99)
+            {
+                target.checked=data["active"]??false;
+                if(!target.checked)target.removeAttribute("checked");
+                else target.setAttribute("checked",true);
+
+                mov.changeValueData(data);
+            }
+            if(act==99)
+            {
+                mov.CancelRow(data);
+                
+                mov.setValueSaldos(result)
+            }
+        });
+    },
+    setValueSaldos(result)
+    {
+        var saldos=result.data_cuenta.saldos;
+        
+        var saldo_inicial=document.getElementById("saldo_inicial");
+        var ingresos=document.getElementById("ingresos");
+        var egresos=document.getElementById("egresos");
+        var saldo_alfinal=document.getElementById("saldo_alfinal");
+        var saldo_total=document.getElementById("saldo_total");
+
+        if(saldo_inicial)saldo_inicial.innerHTML=saldos.saldo_inicial;
+        if(ingresos)ingresos.innerHTML=saldos.ingresos;
+        if(egresos)egresos.innerHTML=saldos.egresos;
+        if(saldo_alfinal)saldo_alfinal.innerHTML=saldos.saldo_alfinal;
+        if(saldo_total)saldo_total.innerHTML=saldos.saldo_total;
     },
     upload(file,idalertmodal,fdata=null,act="",_field_="")
     {
@@ -133,6 +270,9 @@ var mov=
         InduxsoftCrudlModel.InvokeService(mov.url_mov_cuenta,data,
         function(data)
         {
+            var row=mov.DataRowSelected();
+            if(row)mov.getAdjuntos(row);
+            
             file.value="";
             mov.alerText(idalertmodal,"Archivo subido correctamente","color:green");
         },
@@ -178,20 +318,34 @@ var mov=
             else alert(error.message??error);
 	    },"POST",false);
     },
-    MovCuentaModal(row)
+    MovCuentaModal(row,event=null)
     {
+        var target=event?.target??null;
+        if(!row && target)row=JSON.parse(target.getAttribute("data"));
+
         if(this.fecha_aplicacion)this.fecha_aplicacion.value=row.aplicacion??"";
         if(this.check_confirmar)this.check_confirmar.checked=(row.confirmado??0)>0;
         if(this.check_conciliar)this.check_conciliar.checked=(row.conciliado??0)>0;
         if(this.check_auditar)this.check_auditar.checked=(row.auditado??0)>0;
-        
+        if(this.notas)this.notas.value=(row.notas_mc??"");
+
+        var nav=document.getElementById("nav-principal-tab");
+        if(nav)nav.click();
+
+        this.getAdjuntos(row);
+        this.trigger(this.check_confirmar,"change");
+        this.showModal("modal_entity_mov_cuenta");
+    },
+    getAdjuntos(row)
+    {
         mov.service(mov.url_mov_cuenta,row,"getadjuntos",
         (data)=>
         {
-            console.log(data);
             mov.media_list.setData(data);
-        },(error)=>{});
-        this.showModal("modal_entity_mov_cuenta");
+        },(error)=>
+        {
+            mov.alerText("#lbl_entity_blank_",error.message??error,"color:red");
+        });
     },
     showModal(modalId='')
     {
@@ -216,5 +370,10 @@ var mov=
         if (!bsModal) return new bootstrap.Modal(modalElement);
 
         return bsModal;
-    }
+    },
+    trigger:function(element,event)
+	{
+		var e=new Event(event);
+       if(element)element.dispatchEvent(e);
+	}
 }

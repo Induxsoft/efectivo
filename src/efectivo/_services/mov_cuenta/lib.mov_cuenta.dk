@@ -2,8 +2,15 @@
 #!
 module ":mov"
 {
+    include @MODEL_MOVCUENTA
+
     confirmar::&db,&params,&data
     {
+        using params
+        {
+            @"mov":@@(data,"#sys_pk")
+        }
+        ref movconf=@null
         do dbr.begin(db)
             new ndata
             {
@@ -15,19 +22,26 @@ module ":mov"
                 @"conciliado":if(parse.bool(@@(data,"conciliado")),1,0)
                 @"auditado":if(parse.bool(@@(data,"auditado")),1,0)
             }
-            do dbr.save(db,"movcuenta",ndata)
+            ref mov= dbr.save(db,"movcuenta",ndata)
+            ref movconf=dbr.rec(db,"select * from movcta_confirmacion where ref_mov=@mov limit 1",params)
 
             new movcta_confirmacion
             {
+                @"sys_pk":@@(movconf,"#sys_pk")
+                @"sys_recver":@@(movconf,"#sys_recver")
                 @"ref_mov":@@(data,"#sys_pk")
                 @"notas":@@(data,"$notas")
                 @"api_confirmacion":@@(data,"#api_confirmacion")
                 @"api_referencia":@@(data,"$api_referencia")
                 @"api_url":@@(data,"$api_url")
             }
-            do dbr.save(db,"movcta_confirmacion",movcta_confirmacion)
+
+            ref movconf= dbr.save(db,"movcta_confirmacion",movcta_confirmacion)
+            using movconf{@"sys_recver_mov":@@(mov,"#sys_recver")}
         do dbr.commit(db)
         
+        return movconf
+
         exception
         {
             if dbr.in_transaction(db){do dbr.rollback(db)}
@@ -42,7 +56,7 @@ module ":mov"
             @"sys_recver":@@(data,"#sys_recver")
             @"sys_pk":@@(data,"#sys_pk")
         }
-        do dbr.save(db,"movcuenta",ndata)
+        return dbr.save(db,"movcuenta",ndata)
     }
     auditar::&db,&params,&data
     {
@@ -52,7 +66,7 @@ module ":mov"
             @"sys_recver":@@(data,"#sys_recver")
             @"sys_pk":@@(data,"#sys_pk")
         }
-        do dbr.save(db,"movcuenta",ndata)
+        return dbr.save(db,"movcuenta",ndata)
     }
     cancelar::&db,&params,&data
     {
@@ -62,7 +76,38 @@ module ":mov"
             @"sys_recver":@@(data,"#sys_recver")
             @"sys_pk":@@(data,"#sys_pk")
         }
-        do dbr.save(db,"movcuenta",ndata)
+        ref mov=@null
+        FMT_MONEY = "$ "+"#"+@THOUSANDS_SEPARATOR+"0"+@DECIMAL_SEPARATOR+padright("",@DECIMAL_PRECISION,"0")
+
+        do dbr.begin(db)
+            ref mov=dbr.save(db,"movcuenta",ndata)
+
+            ref getparams=@@(data,"&params")
+            using  getparams{@"_entity_id":@@(data,"#_entity_id")}
+            ref data_cuenta=mov.obtenerMovimientosCuenta(db,getparams)
+
+            ref saldos=@@(data_cuenta,"&saldos")
+
+            using saldos
+            {
+                
+                @"saldo_inicial":format(@@(saldos,'#saldo_inicial'),FMT_MONEY)
+                @"ingresos": format(@@(saldos,'#ingresos'),FMT_MONEY)
+                @"egresos": format(@@(saldos,'#egresos'),FMT_MONEY)
+                @"saldo_total": format(@@(saldos,'#saldo_total'),FMT_MONEY)
+                @"saldo_alfinal": format(@@(saldos,'#saldo_alfinal'),FMT_MONEY)
+            }
+            
+            mov<"data_cuenta*">:data_cuenta
+        do dbr.commit(db)
+        
+        return mov
+
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(500,last_error())
+        }
     }
     upload::&db,&params,&data
     {
@@ -78,7 +123,7 @@ module ":mov"
         {
             ref file=@item(files,i)
 
-            path_file=path.concat(path,@@(file,"$filename"))
+            path_file=path.concat(path,mov.limpiarTexto(@@(file,"$filename")))
             do file.copy(@@(file,"$temp_file"),path_file)
         }
     }
@@ -95,7 +140,7 @@ module ":mov"
         for i = 0; i < @count(files)
         {
             file=list.str(files,i)
-            namefile=file.name(file)
+            namefile=mov.limpiarTexto(file.name(file))
             path_file=path.concat(path,namefile)
             url_file=path.concat(url,namefile)
 
@@ -109,4 +154,8 @@ module ":mov"
         }
         return l
     }
+    #! limpiarTexto::texto
+	{
+		return tolower(trim(replace(ranychars(texto,'$,/\n)("\'[]-%+/',' ')," ","_")))
+	}
 }

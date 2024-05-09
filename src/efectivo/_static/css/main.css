@@ -28,3 +28,8 @@
     color: #000 !important;
     background-color: #F0F8FF !important;
 }
+@media screen and (max-width: 750px) 
+{
+    .control-sm-w-100{width: 100% !important;}
+    .d-block-sm{display: block !important;}
+}
