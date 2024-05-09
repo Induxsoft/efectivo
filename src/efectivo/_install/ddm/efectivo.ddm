@@ -148,6 +148,7 @@ model "erp.efectivo"
         @"uf_color" int
         @"uf_fechacancelacion" datetime
         @"uf_iproveedor" ref:"proveedor"
+        @"confirmado" bool
 
         index "movcuenta_id" unique
         {
@@ -155,7 +156,15 @@ model "erp.efectivo"
             field "referencia"
         }
     }
-
+    entity "movcta_confirmacion" : "TableModel"
+    {
+        @"ref_mov" ref : "movcuenta" unique required
+        @"notas" memo
+        @"api_confirmacion" bool
+        @"api_referencia" string(50)
+        @"api_url" string(1024)
+    }
+    
     //* ======================================== [ ... ]
     // Permisos disponibles
     entity "sitem" : "TableModel"

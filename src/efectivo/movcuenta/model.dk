@@ -61,13 +61,21 @@ module "model"
         params<"periodo"> : periodo
         params<"fd"> : first_day
 
-        sql_sinicial = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_inicial FROM movcuenta WHERE icuenta = @_entity_id AND DATE(aplicacion) < @fd AND NOT IFNULL(cancelado,0);"
-        sql_i_e = "SELECT IFNULL(SUM(IFNULL(ingreso,0)),0) AS ingresos, IFNULL(SUM(IFNULL(egreso,0)),0) AS egresos FROM movcuenta WHERE icuenta = @_entity_id AND DATE(aplicacion) BETWEEN @fd AND LAST_DAY(@fd) AND NOT IFNULL(cancelado,0);"
-        sql_stotal = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_total FROM movcuenta WHERE icuenta = @_entity_id AND NOT IFNULL(cancelado,0);"
+        sql_sinicial = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_inicial FROM movcuenta mov WHERE icuenta = @_entity_id 
+        #<@filter_range_fecha>
+        AND DATE(aplicacion) < @fd AND NOT IFNULL(cancelado,0);"
+        sql_i_e = "SELECT IFNULL(SUM(IFNULL(ingreso,0)),0) AS ingresos, IFNULL(SUM(IFNULL(egreso,0)),0) AS egresos FROM movcuenta mov
+        WHERE icuenta = @_entity_id 
+            #<@filter_range_fecha>
+        AND DATE(aplicacion) BETWEEN @fd AND LAST_DAY(@fd) AND NOT IFNULL(cancelado,0);"
+        sql_stotal = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_total FROM movcuenta mov
+        WHERE icuenta = @_entity_id 
+            #<@filter_range_fecha>
+        AND NOT IFNULL(cancelado,0);"
 
-        sInicial = dbr.num(db,sql_sinicial,params)
-        ref IE = dbr.rec(db,sql_i_e,params)
-        sTotal = dbr.num(db,sql_stotal,params)
+        sInicial = dbr.num(db,ftext(sql_sinicial),params)
+        ref IE = dbr.rec(db,ftext(sql_i_e),params)
+        sTotal = dbr.num(db,ftext(sql_stotal),params)
         // Saldo al final del periodo
         sFinalP = (sInicial + @@(IE,"#ingresos") - @@(IE,"#egresos"))
 
@@ -84,6 +92,11 @@ module "model"
 
         data<"saldos*"> : saldos
     }
+    @filter_range_fecha="AND IF(IFNULL(@year,'')='', true, YEAR(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=@year)
+            AND IF(IFNULL(@month,'')='', true, (YEAR(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=IFNULL(@year,YEAR(NOW())) AND MONTH(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=@month))
+            AND IF(IFNULL(@range,'-99')='-99', true, (DATE(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion)) BETWEEN DATE_ADD(NOW(), INTERVAL -"+str(@@(params,"#range"))+" DAY) AND NOW()))
+            AND IF(IFNULL(@datefrom,'')='', true, (DATE(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion)) BETWEEN DATE(@datefrom) AND DATE(@dateto)))
+            AND IF(IFNULL(@fd,'')='', true, DATE(mov.aplicacion) BETWEEN @fd AND LAST_DAY(@fd))"
 
     mov.obtenerMovimientosCuenta::&db,&params
     {
@@ -92,12 +105,16 @@ module "model"
         sql = "SELECT sys_pk,sys_guid,nombre FROM chequera WHERE sys_pk = @_entity_id;"
         ref cuenta = dbr.rec(db,sql,params)
 
+        params<"year">: ifstr(trim(@@(params,"year"))!="", @@(params,"year"), str(ndatetime.year(ndatetime.now())))
+        params<"month">: ifstr(trim(@@(params,"month"))!="", @@(params,"month"), str(ndatetime.month(ndatetime.now())))
+
         ref saldos = mov.obtenerSaldos(db,params,@null)
 
         sql = "
         SELECT
             mov.sys_pk,
             mov.sys_guid,
+            mov.sys_recver,
             doc.const AS documento,
             mov.referencia,
             DATE_FORMAT(mov.aplicacion,'%Y-%m-%d') AS aplicacion,
@@ -111,16 +128,23 @@ module "model"
             IFNULL(mov.cancelado,0) AS cancelado,
             IFNULL(mov.partida,'') AS partida,
             IFNULL(poliza,'') AS poliza,
+            ifnull(mov.confirmado,0)confirmado,
             DATE_FORMAT(mov.fecha,'%Y-%m-%d') AS creado,
             mov.notas,
-            mov.icuenta
+            mov.icuenta,
+            if(IFNULL(mov.auditado,0),'Sí','No')fauditado,
+            if(IFNULL(mov.conciliado,0),'Sí','No')fconciliado,
+            if(IFNULL(mov.contabilizado,0),'Sí','No')fcontabilizado,
+            if(IFNULL(mov.cancelado,0),'Sí','No')fcancelado,
+            if(ifnull(mov.confirmado,0),'Sí','No')fconfirmado
         FROM movcuenta AS mov
             INNER JOIN cdocumentos AS doc ON doc.id = mov.tipo
             INNER JOIN categoria AS cat ON cat.sys_pk = mov.icategoria
         WHERE mov.icuenta = @_entity_id
+            #<@filter_range_fecha>
         ORDER BY mov.aplicacion, mov.ingreso DESC, mov.egreso DESC
         "
-        ref movimientos = dbr.list(db,sql,params)
+        ref movimientos = dbr.list(db,ftext(sql),params)
 
         new data
         {

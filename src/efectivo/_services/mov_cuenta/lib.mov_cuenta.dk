@@ -1,0 +1,112 @@
+#include "dkli.dkh"
+#!
+module ":mov"
+{
+    confirmar::&db,&params,&data
+    {
+        do dbr.begin(db)
+            new ndata
+            {
+                @"conciliado":if(parse.bool(@@(data,"active")),1,0)
+                @"sys_recver":@@(data,"#sys_recver")
+                @"sys_pk":@@(data,"#sys_pk")
+                @"aplicacion":@@(data,"$aplicacion")
+                @"confirmado":if(parse.bool(@@(data,"confirmado")),1,0)
+                @"conciliado":if(parse.bool(@@(data,"conciliado")),1,0)
+                @"auditado":if(parse.bool(@@(data,"auditado")),1,0)
+            }
+            do dbr.save(db,"movcuenta",ndata)
+
+            new movcta_confirmacion
+            {
+                @"ref_mov":@@(data,"#sys_pk")
+                @"notas":@@(data,"$notas")
+                @"api_confirmacion":@@(data,"#api_confirmacion")
+                @"api_referencia":@@(data,"$api_referencia")
+                @"api_url":@@(data,"$api_url")
+            }
+            do dbr.save(db,"movcta_confirmacion",movcta_confirmacion)
+        do dbr.commit(db)
+        
+        exception
+        {
+            if dbr.in_transaction(db){do dbr.rollback(db)}
+            do rise_error(500,last_error())
+        }
+    }
+    conciliar::&db,&params,&data
+    {
+        new ndata
+        {
+            @"conciliado":if(parse.bool(@@(data,"active")),1,0)
+            @"sys_recver":@@(data,"#sys_recver")
+            @"sys_pk":@@(data,"#sys_pk")
+        }
+        do dbr.save(db,"movcuenta",ndata)
+    }
+    auditar::&db,&params,&data
+    {
+        new ndata
+        {
+            @"auditado":if(parse.bool(@@(data,"active")),1,0)
+            @"sys_recver":@@(data,"#sys_recver")
+            @"sys_pk":@@(data,"#sys_pk")
+        }
+        do dbr.save(db,"movcuenta",ndata)
+    }
+    cancelar::&db,&params,&data
+    {
+        new ndata
+        {
+            @"cancelado":1
+            @"sys_recver":@@(data,"#sys_recver")
+            @"sys_pk":@@(data,"#sys_pk")
+        }
+        do dbr.save(db,"movcuenta",ndata)
+    }
+    upload::&db,&params,&data
+    {
+        
+        path=path.concat(@PATH_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
+        url=path.concat(@URL_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
+
+        do dir.ensure(path)
+    
+        ref files=@@(@http_context,"&request/files")
+
+        for i = 0; i < @count(files)
+        {
+            ref file=@item(files,i)
+
+            path_file=path.concat(path,@@(file,"$filename"))
+            do file.copy(@@(file,"$temp_file"),path_file)
+        }
+    }
+    #! getAdjuntos::&db,&params,&data
+    {
+        path=path.concat(@PATH_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
+        if not(dir.exists(path)){return list.create()}
+
+        url=path.concat(@URL_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
+
+        ref l=list.create()
+
+        ref files=list.files(path,"*")
+        for i = 0; i < @count(files)
+        {
+            file=list.str(files,i)
+            namefile=file.name(file)
+            path_file=path.concat(path,namefile)
+            url_file=path.concat(url,namefile)
+
+            new f
+            {
+                @"min":url_file
+                @"url":url_file
+                @"name":namefile
+            }
+            do list.add(l,f)
+        }
+        return l
+    }
+}

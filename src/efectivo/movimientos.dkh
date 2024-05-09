@@ -32,7 +32,7 @@ module ":erp.efectivo.movimientos"
             @"sys_dtexported*": @null
             @"sys_recver": 0
             @"sys_deleted": @false
-            @"sys_lock": 0
+            @"sys_lock*": @null
             @"aplicacion*": now()
             @"auditado": @false
             @"beneficiario": ""

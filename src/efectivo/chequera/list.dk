@@ -20,9 +20,10 @@ module "list.dk"
         link_editar = "./" + str(@@(cheque,'sys_pk')) + "/"
 
         cheque<"saldo">: format(@@(cheque,'#saldo'),'$ #,0.00')
-        cheque<"link_nombre">: ftext('<a href="#<link_nombre>" style="text-decoration: none;">#<@@(cheque,"$nombre")></a>')
+        // cheque<"link_nombre">: ftext('<a href="#<link_nombre>" style="text-decoration: none;">#<@@(cheque,"$nombre")></a>')
         cheque<"_actions">: ftext('
             <div class="no-print" style="display:flex;justify-content:center;align-items: center; gap: 6px;">
+                <a href="#<link_nombre>" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Estado de cuenta</a>
                 <a href="#<link_editar>" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
                 <button style="cursor:pointer; border: none; padding: 4px 8px; background-color: #F5F5F5; color: #000;" onclick="InduxsoftCrudlModel.Delete(#<@@(cheque,"sys_pk")>)">Eliminar</button>
             </div>
@@ -35,7 +36,7 @@ module "list.dk"
         @"leyend": "Mostrando las primeras # cuentas ordenadas por nombre"
         member @"columns"
         {
-            member @"link_nombre" { @"caption":"Nombre" }
+            member @"nombre" { @"caption":"Nombre" }
             member @"banco" { @"caption":"Banco" }
             member @"numcuenta" { @"caption":"Número de cuenta" }
             member @"clabe" { @"caption":"Clabe" }

@@ -16,6 +16,7 @@ module
 	@JS_BANCO = "/$/efectivo/js/banco.js"
 	@JS_CHEQUERA = "/$/efectivo/js/chequera.js"
 	@JS_MOVCUENTA = "/$/efectivo/js/movcuenta.js"
+	@JS_TABLE = "/$/efectivo/js/table.js"
 
 	//* ======================================== [ _PACKAGE ]
 	@EFC_MENU = "/!/efectivo/"
@@ -38,6 +39,11 @@ module
 	@MOV_TRASPASO = "/!/efectivo/movcuenta/_new/traspaso/"
 	//#endregion
 	
+	@PATH_ADJUNTOS_MOVCUENTA="efectivo/_static/mov_cuenta"
+	@URL_ADJUNTOS_MOVCUENTA="/$/efectivo/mov_cuenta/"
+	//#region url_servicios
+	@_SERVICES_MOV_CUENTA="/efectivo/_services/mov_cuenta/"
+	//#endregion
 	//* ======================================== [ AUTHORIZATIONS ]
 	
 	//- - - - - - - - - - - - - - - Bancos [banco]

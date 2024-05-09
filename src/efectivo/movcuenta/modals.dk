@@ -1,0 +1,87 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #$
+    div(class="modal fade" id="modal_entity_mov_cuenta" "data-bs-keyboard"="false" "data-bs-backdrop"="static" tabindex="-1" role="dialog" "aria-labelledby"="modalforms" "aria-hidden"="true")
+    {
+        div(class= "modal-dialog modal-dialog-centered modal-md" role ="document")
+        {
+            div(class="modal-content")
+            {
+                div(class="modal-header" id="mdl-header-entity_")
+                {
+                    h5(class="modal-title" id="textomdl_blank_"){"Mov. cuenta"}
+                    button(type="button" class="close" "data-bs-dismiss"="modal" "aria-label"="Close" style="border: 1px solid #F0F0F0;")
+                    {
+                        span ("aria-hidden"="true") {$"&times;"}
+                    }
+                }
+                div(class="modal-body" id="mdl-body-entity_")
+                {
+                    ul(class="nav nav-tabs border-0" id="nav-tab" role="tablist")
+                    {
+                        li(class="nav-item" style="cursor:pointer;"){a(class="nav-link active" id="nav-principal-tab" "data-bs-toggle"="tab" "-toggle"="tab" "data-bs-target"="#nav-principal" role="tab" "aria-controls"="nav-principal" "aria-selected"="true"){"General"}}
+                        li(class="nav-item" style="cursor:pointer;"){a(class="nav-link" id="nav-adjuntos-tab" "data-bs-toggle"="tab" "-toggle"="tab" "data-bs-target"="#nav-adjuntos" role="tab" "aria-controls"="nav-adjuntos" "aria-selected"="false"){"Adjuntos"}}
+                    }
+                    div(class="tab-content" id="nav-tabContent")
+                    {
+                        div(class="tab-pane fade active show" id="nav-principal" role="tabpanel" "aria-labelledby"="nav-principal-tab")
+                        {
+                            label(id="lbl_entity_blank_" class="d-flex" style="color:red;word-break: break-word;"){""}
+                            label{"Fecha de aplicación:"}
+                            input(type="date" class="induxsoft-form-control" id="fecha_aplicacion" name="fecha_aplicacion")
+                            div(class="d-flex")
+                            {
+                                label{input(type="checkbox" id="check_confirmar" name="check_confirmar" )" Confirmado"}
+                            }
+                            label{"Notas:"}
+                            textarea(class="induxsoft-form-control mb-2" id="notas"){""}
+
+                            input(type="file" class="induxsoft-form-control" id="adjuntos" name="adjuntos" style="display:none !important;")
+                            label("for"="adjuntos" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_adjuntos"){"Adjuntos"}
+
+                            div(class="d-flex")
+                            {
+                                label{input(type="checkbox" id="check_conciliar" name="check_conciliar" )" Conciliado"}
+                            }
+
+                            div(class="d-flex")
+                            {
+                                label{input(type="checkbox" id="check_auditar" name="check_auditar" )" Auditado"}
+                            }
+                        }
+                        div(class="tab-pane" id="nav-adjuntos" role="tabpanel" "aria-labelledby"="nav-adjuntos-tab")
+                        {
+                            div(class="mt-2")
+                            {
+                                button(class="btn btn-outline-primary induxsoft-corners" onclick="mov.preview()"){"Descargar"}
+                                hr{}
+                                "media-list"(
+                                id="media-list"
+                                data='[]'
+                                "can-arrange"="true"
+                                "can-drag"="true"
+                                "can-drop"="true"
+                                "can-delete"="false"
+                                "highlight-first"="true"
+                                "media-prop"="url"
+                                "miniature-prop"="mini"
+                                "outline-selected"="true"
+                                "label-prop"="name"
+                                ){""}
+                            }
+                           
+                        }
+                    }
+                    
+                }
+                div(class="modal-footer" id="mdl-footer-entity_")
+                {
+                    button(type="button" id="btn_add_entity_confirmar" class="btn btn-outline-primary induxsoft-corners" onclick="") { "Aceptar"}
+                    button(type="button" id="btn_cancel_entity_blank_" class="btn btn-outline-danger induxsoft-corners" "data-bs-dismiss"="modal") { "Cancelar"}
+                }
+            }
+        }		
+    }
+}

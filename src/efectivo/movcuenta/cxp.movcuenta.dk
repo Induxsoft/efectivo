@@ -12,13 +12,44 @@ module "list.dk"
     ref Cuenta = ifnull(@('&./cuenta'),record.create())
     ref Saldos = ifnull(@('&./saldos'),record.create())
     ref Movimientos = ifnull(@('&./movimientos'),list.create())
-    
+
     FMT_MONEY = "$ "+"#"+@THOUSANDS_SEPARATOR+"0"+@DECIMAL_SEPARATOR+padright("",@DECIMAL_PRECISION,"0")
     
+    ref get = @("&parameters")
+
+    get<"filter-mode">: ifstr(trim(@@(get,"filter-mode"))!="", @@(get,"filter-mode"), "month")
+    get<"year">: ifstr(trim(@@(get,"year"))!="", @@(get,"year"), str(ndatetime.year(ndatetime.now())))
+    get<"month">: ifstr(trim(@@(get,"month"))!="", @@(get,"month"), str(ndatetime.month(ndatetime.now())))
+
+    new select
+    {
+        @"0":"No"
+        @"1":"Sí"
+    }
+
+    for i = 0; i < @count(Movimientos)
+    {
+        ref mov=@item(Movimientos,i)
+        if not(@@(mov,"#cancelado"))
+        {
+            jsonmov=to.json(mov)
+            mov<"btn_confirmado">: "<button class='' style='display:flex' onclick='mov.MovCuentaModal("+jsonmov+")'>Confirmación</button>"
+            mov<"fconciliado">:"<input type='checkbox' "+ifstr(@@(mov,"#conciliado"),"checked","")+"='true'  onchange='mov.changeCheck("+jsonmov+",0,event)'>"
+            mov<"fauditado">:"<input type='checkbox' "+ifstr(@@(mov,"#auditado"),"checked","")+"='true'  onchange='mov.changeCheck("+jsonmov+",1,event)'>"
+            mov<"fcancelado">:"<button onclick='mov.changeCheck("+jsonmov+",99)'>Cancelar</button>"
+        }
+        
+
+    }
     #$
     div(class="container")
     {
-        link(href="#<@CSS_MAIN>" rel="stylesheet")
+        #!
+        #include "modals.dk"
+        #$
+        link(href="#<@CSS_MAIN>" rel="stylesheet"){""}
+        script(src="#<@JS_MOVCUENTA>"){""}
+        script(src="#<@JS_TABLE>"){""}
 
         div(class="row container-section m-0 px-0 py-2 my-2 border-bottom sticky-top bg-white" id="main_action_bar")
         {
@@ -26,9 +57,10 @@ module "list.dk"
             div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
             {
                 a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
-                a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar depósito"}
-                a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar retiro"}
-                a(href="#<@MOV_TRASPASO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Realizar transferencia"}
+
+                a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Depósito"}
+                a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Retiro"}
+                a(href="#<@MOV_TRASPASO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Transferencia"}
                 a(href="#<@EFC_CHEQUERA>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_X_LG>"}
             }
         }
@@ -36,7 +68,44 @@ module "list.dk"
         div
         {
             h6(class="text-muted"){$"#<@@(Cuenta,'$nombre')>"}
-
+            form(action="." method="GET" id="form_filter" class="no-print my-1")
+            {
+                div(class="d-flex align-items-center")
+                {
+                    div
+                    {
+                        select(class="induxsoft-form-select" name="tdate" onchange="document.querySelector('#form_filter').submit();")
+                        {
+                            option(value="0" "#<ifstr(@@(get,'$tdate')=='0','selected','')>"="true"){$"Creación"}
+                            option(value="1" "#<ifstr(@@(get,'$tdate')=='1' || @@(get,'$tdate')=='','selected','')>"="true"){$"Aplicación"}
+                        }
+                    }
+                        div(class="flex-grow-1")
+                    {
+                        "filter-date-range"(
+                            "mode-field"="filter-mode"
+                            "year-field"="year"
+                            "month-field"="month"
+                            "range-field"="range"
+                            "from-field"="datefrom"
+                            "to-field"="dateto"
+                            "selection"='#<to.json(get)>'
+                            "lastdays-options"="15,30,45,60,90"
+                            "years-options"="2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024"
+                            "custom-range"="true"
+                            "form"="#form_filter"
+                            "auto-submit"="true"
+                            "label-months"="Ver por cada mes"
+                            "label-days"="Últ. @lastdays días"
+                            "label-custom"="Personalizado"
+                            "label-from"="Desde:"
+                            "label-to"="Hasta:"
+                            "month-names"="Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre"
+                        ){$""}
+                    }
+                }
+            }
+            hr{}
             table(class="table table-sm table-bordered")
             {
                 thead
@@ -54,35 +123,37 @@ module "list.dk"
                 {
                     tr
                     {
-                        td{$"#<format(@@(Saldos,'#saldo_inicial'),FMT_MONEY)>"}
-                        td{$"#<format(@@(Saldos,'#ingresos'),FMT_MONEY)>"}
-                        td{$"#<format(@@(Saldos,'#egresos'),FMT_MONEY)>"}
-                        td{$"#<format(@@(Saldos,'#saldo_alfinal'),FMT_MONEY)>"}
-                        td{$"#<format(@@(Saldos,'#saldo_total'),FMT_MONEY)>"}
+                        td(class="text-end"){$"#<format(@@(Saldos,'#saldo_inicial'),FMT_MONEY)>"}
+                        td(class="text-end"){$"#<format(@@(Saldos,'#ingresos'),FMT_MONEY)>"}
+                        td(class="text-end"){$"#<format(@@(Saldos,'#egresos'),FMT_MONEY)>"}
+                        td(class="text-end"){$"#<format(@@(Saldos,'#saldo_alfinal'),FMT_MONEY)>"}
+                        td(class="text-end"){$"#<format(@@(Saldos,'#saldo_total'),FMT_MONEY)>"}
                     }
                 }
             }
 
             div(class="")
             {
-                "edit-table"(class="table" id="table_cuentas" data="#<to.json(Movimientos)>")
+                "edit-table"(class="table" id="table_cuentas" data="#<to.json(Movimientos)>" )
                 {
                     "edit-thead"
                     {
                         "edit-tr"
                         {
+                            "edit-th"(type="NoEditable" field="btn_confirmado"){$""}
+                            "edit-th"(type="NoEditable" keyfield="confirmar" field="fconfirmado"){$"Confirmado"}
                             "edit-th"(type="NoEditable" field="documento"){$"Documento"}
                             "edit-th"(type="NoEditable" field="referencia"){$"Referencia"}
-                            "edit-th"(type="NoEditable" field="aplicación"){$"Aplicación"}
-                            "edit-th"(type="NoEditable" field="ingreso"){$"Ingreso"}
-                            "edit-th"(type="NoEditable" field="egreso"){$"Egreso"}
+                            "edit-th"(type="NoEditable" field="aplicacion"){$"Aplicación"}
+                            "edit-th"(type="NoEditable" field="ingreso" textalign="end" format="true" decs="2" prefix="$ " thousandssep="true"){$"Ingreso"}
+                            "edit-th"(type="NoEditable" field="egreso" textalign="end" format="true" decs="2" prefix="$ " thousandssep="true"){$"Egreso"}
                             "edit-th"(type="NoEditable" field="categoria"){$"Categoria"}
                             "edit-th"(type="NoEditable" field="beneficiario"){$"Beneficiario"}
-                            "edit-th"(type="NoEditable" field="auditado"){$"Auditado"}
-                            "edit-th"(type="NoEditable" field="conciliado"){$"Conciliado"}
-                            "edit-th"(type="NoEditable" field="contabilizado"){$"Contabilizado"}
-                            "edit-th"(type="NoEditable" field="cancelado"){$"Cancelado"}
-                            "edit-th"(type="NoEditable" field="poliza"){$"Poliza"}
+                            "edit-th"(type="NoEditable" field="fconciliado"){$"Conciliado"}
+                            "edit-th"(type="NoEditable" field="fauditado"){$"Auditado"}
+                            "edit-th"(type="NoEditable" field="fcancelado"){$"Cancelado"}
+                            "edit-th"(type="NoEditable" field="fcontabilizado"){$"Contabilizado"}
+                            // "edit-th"(type="NoEditable" field="poliza"){$"Poliza"}
                             "edit-th"(type="NoEditable" field="creado"){$"Creado"}
                             "edit-th"(type="NoEditable" field="notas"){$"Notas"}
                         }
@@ -96,5 +167,12 @@ module "list.dk"
         }
 
         p{$"#<@('$error/message')>"}
+
+        script
+        {
+            $'
+            mov.url_mov_cuenta="#<@_SERVICES_MOV_CUENTA>";
+            '
+        }
     }
 }

@@ -1,0 +1,99 @@
+#include "dkli.dkh"
+#!
+module ""
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "../_lib/config.dk"
+
+    http_cors::
+	{
+		@http_context<"response/headers/Access-Control-Allow-Origin">:"*"
+        @http_context<"response/headers/Access-Control-Allow-Methods">:"*"
+        @http_context<"response/headers/Access-Control-Allow-Headers">:"*"
+	}
+	api_base_service::
+    {
+        expose responseJSONdata
+
+        new responseJSONdata
+        {
+            @"success":@true
+        }
+        
+        that
+        
+        @http_context<"response/headers/Content-Type">:"application/json;charset=utf-8"
+        @http_context<"response/output">:"text"
+        @http_context<"response/text">: to.json(responseJSONdata)
+    }
+	ref @DB=@null
+	getDB::
+	{
+		if isnull(@DB){ref @DB=@@(@http_context,"&session/idp/database")}
+		return @DB
+	}
+	setDB::&db
+	{
+		if isnull(@DB){ref @DB=db}
+		if isnull(@DB){ref @DB=@@(@http_context,"&session/idp/database")}
+
+		return @DB
+	}
+
+    do http_cors()
+
+	go api_base_service(responseJSONdata:response)
+	{
+        ref getData=@@(@http_context,"&request/get")
+		ref postData=@@(@http_context,"&request/post")
+		if isnull(postData){ref postData=from.json(field.dstr(@http_context,"request/post_string","{}"))}
+		ref db=@@(@http_context,"&session/idp/database")
+
+		do setDB(db)
+
+        ref data_response=@null
+        switch @@(getData,"$_program")
+        {
+            case "mov_cuenta"
+            {
+                #include "lib.mov_cuenta.dk"
+
+                switch tolower(@@(postData,"act"))
+                {
+                    case "confirmar"{do mov.confirmar(db,getData,postData)}
+                    case "conciliar"{do mov.conciliar(db,getData,postData)}
+                    case "auditar"{do mov.auditar(db,getData,postData)}
+                    case "cancelar"{do mov.cancelar(db,getData,postData)}
+                    case "contabilizar"{do mov.contabilizar(db,getData,postData)}
+                    case "upload"{do mov.upload(db,getData,postData)}
+                    case "getadjuntos"{ref data_response=mov.getAdjuntos(db,getData,postData)}
+                    default
+                    {
+                        do rise_error(500,"Acción no definida mov_cuenta")
+                        break
+                    }
+                }
+                break
+            }
+            default
+            {
+                do rise_error(500,"Acción no definida")
+                break
+            }
+        }
+
+        response<"data*">:data_response
+
+		exception
+		{
+			using response
+			{
+				@"success":@false
+				@"message":last_error()
+			}
+		}
+    }
+    
+}
