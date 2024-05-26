@@ -63,60 +63,142 @@ module "model"
 
     read::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_EDIT_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_EDIT_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+
+        do dbr.apps.action.grant("GD10")
 
         ref data = entity.read(db,params)
         do prepareView(db,params,data)
         return data
-    }
-    update::&db,&params,&data
-    {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_EDIT_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
-
-        ref rec = entity.update(db,params,data)
-        return rec
 
         exception
         {
-            last_error=last_error()
-            do prepareView(db,params,data)
-            do rise_error(0,last_error)
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
         }
     }
+
+    update::&db,&params,&data
+    {
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_EDIT_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+        @use_transaction = @false
+
+        do dbr.apps.action.pre("GD12")
+        do dbr.begin(db)
+
+        ref res = entity.update(db,params,data)
+        
+        do dbr.apps.action.pos(res)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(res)
+
+        return res
+
+        exception
+        {
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do prepareView(db,params,data)
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
+    }
+
     blank::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+        do dbr.apps.action.grant("GD10")
 
         new data
         do prepareView(db,@null,data)
         return data
-    }
-    create::&db,&params,&data
-    {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
-
-        ref rec = entity.create(db,params,data)
-        return rec
 
         exception
         {
-            last_error=last_error()
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
+    }
+
+    create::&db,&params,&data
+    {
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+
+        @use_transaction = @false
+
+        do dbr.apps.action.pre("GD11")
+        do dbr.begin(db)
+
+        ref res = entity.create(db,params,data)
+        
+        do dbr.apps.action.pos(res)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(res)
+
+        return res
+
+        exception
+        {
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
             do prepareView(db,params,data)
-            do rise_error(0,last_error)
+            do dbr.apps.action.log()
+            do rise_error(code,error)
         }
     }
 
     list::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_CONSULTAR_CUENTAS_BANCARIAS)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_CONSULTAR_CUENTAS_BANCARIAS)) { do rise_error(0,"No autorizado")}
+        do dbr.apps.action.grant("GD10")
 
         return entity.list(db,params)
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
+
     delete::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_DEL_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_DEL_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+        @use_transaction = @false
 
-        return entity.delete(db,params)
+        do dbr.apps.action.pre("GD13")
+        do dbr.begin(db)
+
+        ref res = entity.delete(db,params)
+
+        do dbr.apps.action.pos(res)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(res)
+
+        return res
+
+        exception
+        {
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
 
     point @delete to delete

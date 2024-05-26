@@ -15,7 +15,8 @@ module "model"
 
     banco.list::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_CONSULTAR_BANCOS)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_CONSULTAR_BANCOS)) { do rise_error(0,"No autorizado")}
+        do dbr.apps.action.grant("GD30")
 
         sql = "
             SELECT 
@@ -34,37 +35,130 @@ module "model"
             LIMIT #<@default_max_rows>;
         "
         return dbr.list(db, ftext(sql), params)
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
+
     banco.add::&db,&params,&data
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_BANCOS)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_BANCOS)) { do rise_error(0,"No autorizado")}
+        @use_transaction = @false
 
-        return entity.create(db,params,data)
+        do dbr.apps.action.pre("GD31")
+        do dbr.begin(db)
+
+        ref res = entity.create(db,params,data)
+
+        do dbr.apps.action.pos(res)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(res)
+
+        return res
+
+        exception
+        {
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
+
     banco.blank::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_BANCOS)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_BANCOS)) { do rise_error(0,"No autorizado")}
+        do dbr.apps.action.grant("GD30")
 
         return record.create()
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
 
     banco.read::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_EDIT_BANCOS)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_EDIT_BANCOS)) { do rise_error(0,"No autorizado")}
+        do dbr.apps.action.grant("GD30")
 
         return entity.read(db,params)
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
+
     banco.update::&db,&params,&data
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_EDIT_BANCOS)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_EDIT_BANCOS)) { do rise_error(0,"No autorizado")}
+        @use_transaction = @false
 
-        return entity.update(db,params,data)
+        do dbr.apps.action.pre("GD32")
+        do dbr.begin(db)
+
+        ref res = entity.update(db,params,data)
+
+        do dbr.apps.action.pos(res)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(res)
+
+        return res
+
+        exception
+        {
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
+
     banco.delete::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_DEL_BANCOS)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_DEL_BANCOS)) { do rise_error(0,"No autorizado")}
+        @use_transaction = @false
 
-        return entity.delete(db,params)
+        do dbr.apps.action.pre("GD33")
+        do dbr.begin(db)
+
+        ref res = entity.delete(db,params)
+
+        do dbr.apps.action.pos(res)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(res)
+
+        return res
+
+        exception
+        {
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }        
     }
     
     point @delete to banco.delete

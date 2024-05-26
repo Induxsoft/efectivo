@@ -174,13 +174,23 @@ module "model"
 
     mov.deposito::&db,&params,&data
     {
-        do errordet(@false)
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_DEPOSITO)) { do rise_error(0,"No autorizado")}
+        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_DEPOSITO)) { do rise_error(0,"No autorizado")}
+        @use_transaction = @false
+
+        do dbr.apps.action.pre("GD14")
+        do dbr.begin(db)
+
         do erp.efectivo.movimientos.deposito(db,data)
+
+        do dbr.apps.action.pos(@null)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(@null)
+
         @url_redir = @EFC_MOVCUENTA + @@(data,"$icuenta") + "/movimientos/" 
 
         exception
         {
+            do errordet(@false)
             if dbr.in_transaction(db) { do dbr.rollback(db) }
 
             ref formData = record.copy(data,"*")
@@ -191,19 +201,30 @@ module "model"
             data<"form*"> : formData
             
             do mov.prepareView(db,params,data)
+            do dbr.apps.action.log()
             do rise_error(code,error)
         }
     }
 
     mov.retiro::&db,&params,&data
     {
-        do errordet(@false)
-        if not(@@(params,"#auth_transferencia")){if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_RETIRO)) { do rise_error(0,"No autorizado")}}
+        //if not(@@(params,"#auth_transferencia")){if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_RETIRO)) { do rise_error(0,"No autorizado")}}
+        @use_transaction = @false
+
+        do dbr.apps.action.pre("GD15")
+        do dbr.begin(db)
+        
         do erp.efectivo.movimientos.retiro(db,data)
+
+        do dbr.apps.action.pos(@null)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(@null)
+        
         @url_redir = @EFC_MOVCUENTA + @@(data,"$icuenta") + "/movimientos/" 
 
         exception
         {
+            do errordet(@false)
             if dbr.in_transaction(db) { do dbr.rollback(db) }
 
             ref formData = record.copy(data,"*")
@@ -214,20 +235,32 @@ module "model"
             data<"form*"> : formData
             
             do mov.prepareView(db,params,data)
+            do dbr.apps.action.log()
             do rise_error(code,error)
         }
     }
 
     mov.traspaso::&db,&params,&data
     {
-        do errordet(@false)
-        params<"auth_transferencia">:dbr.security.isauth(db,@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA)
-        if not(@@(params,"#auth_transferencia")) { do rise_error(0,"No autorizado")}
+        //params<"auth_transferencia">:dbr.security.isauth(db,@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA)
+        //if not(@@(params,"#auth_transferencia")) { do rise_error(0,"No autorizado")}
+
+        @use_transaction = @false
+
+        do dbr.apps.action.pre("GD16")
+        do dbr.begin(db)
+
         do erp.efectivo.movimientos.traspaso(db,data)
+
+        do dbr.apps.action.pos(@null)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(@null)
+
         @url_redir = @EFC_MOVCUENTA + @@(data,"$cuenta_destino") +"/movimientos/"
         
         exception
         {
+            do errordet(@false)
             if dbr.in_transaction(db) { do dbr.rollback(db) }
 
             ref formData = record.copy(data,"*")
@@ -238,6 +271,7 @@ module "model"
             data<"form*"> : formData
             
             do mov.prepareView(db,params,data)
+            do dbr.apps.action.log()
             do rise_error(code,error)
         }
     }
