@@ -1,0 +1,19 @@
+﻿itemid,description,itemparent
+efectivo,Gestión de efectivo,\0
+efectivo.banco,Bancos,efectivo
+GD30,Bancos,efectivo.banco
+GD31,Agregar bancos,efectivo.banco
+GD32,Editar bancos,efectivo.banco
+GD33,Eliminar bancos,efectivo.banco
+efectivo.cuentas,Cuentas de cheque,efectivo
+GD10,Cuentas bancarias,efectivo.cuentas
+GD11,Agregar cuenta de cheque,efectivo.cuentas
+GD12,Editar cuenta de cheque,efectivo.cuentas
+GD13,Eliminar cuenta de cheque,efectivo.cuentas
+GD14,Depósito,efectivo.cuentas
+GD15,Retiro,efectivo.cuentas
+GD16,Traspaso,efectivo.cuentas
+GD20,Confirmar movimiento,efectivo.cuentas
+GD21,Conciliar movimiento,efectivo.cuentas
+GD22,Auditar movimiento,efectivo.cuentas
+GD23,Cancelar movimiento,efectivo.cuentas
