@@ -7,6 +7,9 @@ module ""
     #include "dbr.dkh"
     #include "../../_lib/config.dk"
     #include "../../_lib/lib.dk"
+    #include "dbr.apps.dkl"
+    #include "dbr.vars.dkl"
+    #include "dbr.events.dkl"
     #include "dbr.security.dkl"
 
     http_cors::
@@ -15,6 +18,7 @@ module ""
         @http_context<"response/headers/Access-Control-Allow-Methods">:"*"
         @http_context<"response/headers/Access-Control-Allow-Headers">:"*"
 	}
+
 	api_base_service::
     {
         expose responseJSONdata
@@ -30,12 +34,15 @@ module ""
         @http_context<"response/output">:"text"
         @http_context<"response/text">: to.json(responseJSONdata)
     }
+
 	ref @DB=@null
+
 	getDB::
 	{
 		if isnull(@DB){ref @DB=@@(@http_context,"&session/idp/database")}
 		return @DB
 	}
+
 	setDB::&db
 	{
 		if isnull(@DB){ref @DB=db}
@@ -54,8 +61,8 @@ module ""
 		ref db=@@(@http_context,"&session/idp/database")
 
 		do setDB(db)
-
         ref data_response=@null
+
         switch @@(getData,"$_program")
         {
             case "mov_cuenta"
@@ -64,13 +71,13 @@ module ""
 
                 switch tolower(@@(postData,"act"))
                 {
-                    case "confirmar"{ref data_response= mov.confirmar(db,getData,postData)}
-                    case "conciliar"{ref data_response=  mov.conciliar(db,getData,postData)}
-                    case "auditar"{ref data_response=  mov.auditar(db,getData,postData)}
-                    case "cancelar"{ref data_response=  mov.cancelar(db,getData,postData)}
-                    case "contabilizar"{do mov.contabilizar(db,getData,postData)}
-                    case "upload"{do mov.upload(db,getData,postData)}
-                    case "getadjuntos"{ref data_response=mov.getAdjuntos(db,getData,postData)}
+                    case "confirmar"{ ref data_response=mov.confirmar(db,getData,postData) }
+                    case "conciliar"{ref data_response=mov.conciliar(db,getData,postData) }
+                    case "auditar"{ ref data_response=mov.auditar(db,getData,postData) }
+                    case "cancelar"{ ref data_response=mov.cancelar(db,getData,postData) }
+                    case "contabilizar"{ do mov.contabilizar(db,getData,postData) }
+                    case "upload"{ do mov.upload(db,getData,postData) }
+                    case "getadjuntos"{ ref data_response=mov.getAdjuntos(db,getData,postData) }
                     default
                     {
                         do rise_error(500,"Acción no definida mov_cuenta")
@@ -97,5 +104,4 @@ module ""
 			}
 		}
     }
-    
 }

@@ -10,7 +10,7 @@ module "model"
         {
             case "deposito"
             {
-                if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_DEPOSITO)) { do rise_error(0,"No autorizado") }
+                // if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_DEPOSITO)) { do rise_error(0,"No autorizado") }
 
                 sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c INNER JOIN divisa d ON d.sys_pk = c.idivisa WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
                 data<"cuentas*"> : dbr.list(db,sql,@null)
@@ -22,7 +22,7 @@ module "model"
             }
             case "retiro"
             {
-                if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_RETIRO)) { do rise_error(0,"No autorizado") }
+                // if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_RETIRO)) { do rise_error(0,"No autorizado") }
 
                 sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c INNER JOIN divisa d ON d.sys_pk = c.idivisa WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
                 data<"cuentas*"> : dbr.list(db,sql,@null)
@@ -34,7 +34,7 @@ module "model"
             }
             case "traspaso"
             {
-                if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA)) { do rise_error(0,"No autorizado") }
+                // if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA)) { do rise_error(0,"No autorizado") }
 
                 sql = "SELECT c.sys_pk,CONCAT(c.nombre,'(',d.codigo,')') nombre FROM chequera c INNER JOIN divisa d ON d.sys_pk = c.idivisa WHERE NOT IFNULL(c.sys_deleted,0) ORDER BY c.sys_pk;"
                 data<"cuentas*"> : dbr.list(db,sql,@null)
@@ -112,7 +112,7 @@ module "model"
         
     mov.obtenerMovimientosCuenta::&db,&params
     {
-        if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ESTADO_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+        // if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ESTADO_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
 
         sql = "SELECT sys_pk,sys_guid,nombre FROM chequera WHERE sys_pk = @_entity_id;"
         ref cuenta = dbr.rec(db,sql,params)

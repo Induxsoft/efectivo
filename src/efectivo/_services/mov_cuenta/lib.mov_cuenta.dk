@@ -6,68 +6,113 @@ module ":mov"
 
     confirmar::&db,&params,&data
     {
-        using params
-        {
-            @"mov":@@(data,"#sys_pk")
-        }
+        using params { @"mov":@@(data,"#sys_pk") }
+
         ref movconf=@null
+        
+        do dbr.apps.action.pre("GD20")
         do dbr.begin(db)
-            new ndata
-            {
-                @"conciliado":if(parse.bool(@@(data,"active")),1,0)
-                @"sys_recver":@@(data,"#sys_recver")
-                @"sys_pk":@@(data,"#sys_pk")
-                @"aplicacion":@@(data,"$aplicacion")
-                @"confirmado":if(parse.bool(@@(data,"confirmado")),1,0)
-                @"conciliado":if(parse.bool(@@(data,"conciliado")),1,0)
-                @"auditado":if(parse.bool(@@(data,"auditado")),1,0)
-            }
-            ref mov= dbr.save(db,"movcuenta",ndata)
-            ref movconf=dbr.rec(db,"select * from movcta_confirmacion where ref_mov=@mov limit 1",params)
 
-            new movcta_confirmacion
-            {
-                @"sys_pk":@@(movconf,"#sys_pk")
-                @"sys_recver":@@(movconf,"#sys_recver")
-                @"ref_mov":@@(data,"#sys_pk")
-                @"notas":@@(data,"$notas")
-                @"api_confirmacion":@@(data,"#api_confirmacion")
-                @"api_referencia":@@(data,"$api_referencia")
-                @"api_url":@@(data,"$api_url")
-            }
+        new ndata
+        {
+            @"conciliado":if(parse.bool(@@(data,"active")),1,0)
+            @"sys_recver":@@(data,"#sys_recver")
+            @"sys_pk":@@(data,"#sys_pk")
+            @"aplicacion":@@(data,"$aplicacion")
+            @"confirmado":if(parse.bool(@@(data,"confirmado")),1,0)
+            @"conciliado":if(parse.bool(@@(data,"conciliado")),1,0)
+            @"auditado":if(parse.bool(@@(data,"auditado")),1,0)
+        }
+        ref mov=dbr.save(db,"movcuenta",ndata)
+        ref movconf=dbr.rec(db,"select * from movcta_confirmacion where ref_mov=@mov limit 1",params)
 
-            ref movconf= dbr.save(db,"movcta_confirmacion",movcta_confirmacion)
-            using movconf{@"sys_recver_mov":@@(mov,"#sys_recver")}
+        new movcta_confirmacion
+        {
+            @"sys_pk":@@(movconf,"#sys_pk")
+            @"sys_recver":@@(movconf,"#sys_recver")
+            @"ref_mov":@@(data,"#sys_pk")
+            @"notas":@@(data,"$notas")
+            @"api_confirmacion":@@(data,"#api_confirmacion")
+            @"api_referencia":@@(data,"$api_referencia")
+            @"api_url":@@(data,"$api_url")
+        }
+
+        ref movconf=dbr.save(db,"movcta_confirmacion",movcta_confirmacion)
+        using movconf { @"sys_recver_mov": @@(mov,"#sys_recver") }
+        
+        do dbr.apps.action.pos(movconf)
         do dbr.commit(db)
+        do dbr.apps.action.ext(movconf)
         
         return movconf
 
         exception
         {
-            if dbr.in_transaction(db){do dbr.rollback(db)}
-            do rise_error(500,last_error())
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
         }
     }
+
     conciliar::&db,&params,&data
     {
+        do dbr.apps.action.pre("GD21")
+        do dbr.begin(db)
+
         new ndata
         {
             @"conciliado":if(parse.bool(@@(data,"active")),1,0)
             @"sys_recver":@@(data,"#sys_recver")
             @"sys_pk":@@(data,"#sys_pk")
         }
-        return dbr.save(db,"movcuenta",ndata)
+        ref result = dbr.save(db,"movcuenta",ndata)
+
+        do dbr.apps.action.pos(result)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(result)
+
+        exception
+        {
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
+
     auditar::&db,&params,&data
     {
+        do dbr.apps.action.pre("GD22")
+        do dbr.begin(db)
+
         new ndata
         {
             @"auditado":if(parse.bool(@@(data,"active")),1,0)
             @"sys_recver":@@(data,"#sys_recver")
             @"sys_pk":@@(data,"#sys_pk")
         }
-        return dbr.save(db,"movcuenta",ndata)
+        ref result = dbr.save(db,"movcuenta",ndata)
+
+        do dbr.apps.action.pos(result)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(result)
+
+        exception
+        {
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
+
     cancelar::&db,&params,&data
     {
         new ndata
@@ -76,42 +121,51 @@ module ":mov"
             @"sys_recver":@@(data,"#sys_recver")
             @"sys_pk":@@(data,"#sys_pk")
         }
+
         ref mov=@null
         FMT_MONEY = "$ "+"#"+@THOUSANDS_SEPARATOR+"0"+@DECIMAL_SEPARATOR+padright("",@DECIMAL_PRECISION,"0")
 
+        do dbr.apps.action.pre("GD23")
         do dbr.begin(db)
-            ref mov=dbr.save(db,"movcuenta",ndata)
 
-            ref getparams=@@(data,"&params")
-            using  getparams{@"_entity_id":@@(data,"#_entity_id")}
-            ref data_cuenta=mov.obtenerMovimientosCuenta(db,getparams)
+        ref mov=dbr.save(db,"movcuenta",ndata)
 
-            ref saldos=@@(data_cuenta,"&saldos")
+        ref getparams=@@(data,"&params")
+        using  getparams{@"_entity_id":@@(data,"#_entity_id")}
+        ref data_cuenta=mov.obtenerMovimientosCuenta(db,getparams)
 
-            using saldos
-            {
-                
-                @"saldo_inicial":format(@@(saldos,'#saldo_inicial'),FMT_MONEY)
-                @"ingresos": format(@@(saldos,'#ingresos'),FMT_MONEY)
-                @"egresos": format(@@(saldos,'#egresos'),FMT_MONEY)
-                @"saldo_total": format(@@(saldos,'#saldo_total'),FMT_MONEY)
-                @"saldo_alfinal": format(@@(saldos,'#saldo_alfinal'),FMT_MONEY)
-            }
-            
-            mov<"data_cuenta*">:data_cuenta
+        ref saldos=@@(data_cuenta,"&saldos")
+
+        using saldos
+        {
+            @"saldo_inicial":format(@@(saldos,'#saldo_inicial'),FMT_MONEY)
+            @"ingresos": format(@@(saldos,'#ingresos'),FMT_MONEY)
+            @"egresos": format(@@(saldos,'#egresos'),FMT_MONEY)
+            @"saldo_total": format(@@(saldos,'#saldo_total'),FMT_MONEY)
+            @"saldo_alfinal": format(@@(saldos,'#saldo_alfinal'),FMT_MONEY)
+        }
+        
+        mov<"data_cuenta*">:data_cuenta
+
+        do dbr.apps.action.pos(mov)
         do dbr.commit(db)
+        do dbr.apps.action.ext(mov)
         
         return mov
 
         exception
         {
-            if dbr.in_transaction(db){do dbr.rollback(db)}
-            do rise_error(500,last_error())
+            do errordet(@false)
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
         }
     }
+
     upload::&db,&params,&data
     {
-        
         path=path.concat(@PATH_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
         url=path.concat(@URL_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
 

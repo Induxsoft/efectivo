@@ -89,6 +89,9 @@ module "model"
         do dbr.apps.action.pre("GD12")
         do dbr.begin(db)
 
+        if trim(field.dstr(data,"clabe","")) == "" { data<"clabe*"> : @null }
+        if trim(field.dstr(data,"numcuenta","")) == "" { data<"numcuenta*"> : @null }
+
         ref res = entity.update(db,params,data)
         
         do dbr.apps.action.pos(res)
@@ -136,6 +139,9 @@ module "model"
 
         do dbr.apps.action.pre("GD11")
         do dbr.begin(db)
+
+        if trim(field.dstr(data,"clabe","")) == "" { data<"clabe*"> : @null }
+        if trim(field.dstr(data,"numcuenta","")) == "" { data<"numcuenta*"> : @null }
 
         ref res = entity.create(db,params,data)
         

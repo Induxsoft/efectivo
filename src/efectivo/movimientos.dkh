@@ -208,7 +208,7 @@ module ":erp.efectivo.movimientos"
             @"referencia": @@(data,"$referencia_retiro")
             @"documento": @@(data,"#documento_retiro")
             @"icategoria": @@(data,"#icategoria")
-            @"icuenta": @@(data,"#cuenta_destino")
+            @"icuenta": @@(data,"#cuenta_origen")
         }
         new deposito
         {
@@ -220,7 +220,7 @@ module ":erp.efectivo.movimientos"
             @"referencia": @@(data,"$referencia_deposito")
             @"documento": @@(data,"#documento_deposito")
             @"icategoria": @@(data,"#icategoria")
-            @"icuenta": @@(data,"#cuenta_origen")
+            @"icuenta": @@(data,"#cuenta_destino")
         }
 
         if trim(@@(retiro,"$beneficiario")) == "" { retiro<"beneficiario"> : dbr.str(db,"select nombre from chequera where sys_pk = @icuenta;",retiro) }
