@@ -92,10 +92,10 @@ module "form.dk"
             }
         }
 
+        div(class="alert alert-danger overflow-auto mb-2 #<ifstr(@('$error/message')!='','','d-none')>" id="frm_alerts"){$"#<@('error/message')>"}
+
         div(id="work_area" class="container-section")
         {
-            p{$"#<@('$error/message')>"}
-
             form(action="." method="POST" id="form_traspaso")
             {
                 div(class="row mb-2")

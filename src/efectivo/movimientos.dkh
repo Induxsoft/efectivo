@@ -19,6 +19,20 @@ module ":erp.efectivo.movimientos"
         regs = dbr.num(db,"SELECT COUNT(sys_pk) regs FROM movcuenta WHERE icuenta = @icuenta AND referencia = @referencia;",p)
         if regs > 0 { do rise_error(500,"La referencia proporcionada ya se encuentra en uso.") }
 
+        fecha = trim(@@(data,"$fecha"))
+        aplicacion = trim(@@(data,"$aplicacion"))
+
+        if fecha == "" { do field.remove(data,"fecha") }
+        if aplicacion == "" { do field.remove(data,"fecha") }
+
+        if fecha != "" && aplicacion != ""
+        {
+            ndt_fecha = ndatetime.fromstr(fecha,"yyyy-MM-dd")
+            ndt_aplicacion = ndatetime.fromstr(aplicacion,"yyyy-MM-dd")
+
+            if ndatetime.diff(ndt_aplicacion,ndt_fecha,"d") < 0 { do rise_error(500,"La fecha de aplicación no puede ser inferior a la fecha de emisión.") }
+        }
+
         new movcuenta
         {
             @"sys_pk": 0
@@ -33,14 +47,14 @@ module ":erp.efectivo.movimientos"
             @"sys_recver": 0
             @"sys_deleted": @false
             @"sys_lock*": @null
-            @"aplicacion*": now()
+            @"aplicacion*": @null
             @"auditado": @false
             @"beneficiario": ""
             @"cancelado": @false
             @"conciliado": @false
             @"contabilizado": @false
             @"egreso": 0.0
-            @"fecha*": now()
+            @"fecha*": @null
             @"ingreso": 0.0
             @"notas": ""
             @"partida": ""
