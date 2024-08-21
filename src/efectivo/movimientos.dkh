@@ -4,6 +4,8 @@ module ":erp.efectivo.movimientos"
 {
     saveMov::&db,&data
     {
+        start_transaction = @false
+        
         if trim(@@(data,"$notas")) == "" { do rise_error(500,"Debe indicar un concepto `notas`.") }
         if trim(@@(data,"$referencia")) == "" { do rise_error(500,"Debe indicar una referencia.") }
         if @@(data,"#tipo") <= 0 { do rise_error(500,"Debe indicar el tipo de documento `tipo`.") }
@@ -140,8 +142,6 @@ module ":erp.efectivo.movimientos"
             }
         }
 
-        start_transaction = @false
-
         if not(dbr.in_transaction(db)) {
             do dbr.begin(db)
             start_transaction = @true
@@ -154,7 +154,7 @@ module ":erp.efectivo.movimientos"
 
         exception
         {
-            if dbr.in_transaction(db) { do dbr.rollback(db) }
+            if start_transaction { do dbr.rollback(db) }
             do rise_error(last_error_code(),last_error())
         }
     }
@@ -247,7 +247,7 @@ module ":erp.efectivo.movimientos"
 
         exception
         {
-            if dbr.in_transaction(db) { do dbr.rollback(db) }
+            if start_transaction { do dbr.rollback(db) }
             do rise_error(last_error_code(),last_error())
         }
     }
