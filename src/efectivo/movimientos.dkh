@@ -6,11 +6,11 @@ module ":erp.efectivo.movimientos"
     {
         start_transaction = @false
         
-        if trim(@@(data,"$notas")) == "" { do rise_error(500,"Debe indicar un concepto `notas`.") }
-        if trim(@@(data,"$referencia")) == "" { do rise_error(500,"Debe indicar una referencia.") }
-        if @@(data,"#tipo") <= 0 { do rise_error(500,"Debe indicar el tipo de documento `tipo`.") }
-        if @@(data,"#icategoria") <= 0 { do rise_error(500,"Debe indicar una categoria `icategoria`.") }
-        if @@(data,"#icuenta") <= 0 { do rise_error(500,"Debe indicar una cuenta de cheques `icuenta`.") }
+        if trim(@@(data,"$notas")) == "" { do rise_error(511,"Debe indicar un concepto `notas`.") }
+        if trim(@@(data,"$referencia")) == "" { do rise_error(512,"Debe indicar una referencia.") }
+        if @@(data,"#tipo") <= 0 { do rise_error(513,"Debe indicar el tipo de documento `tipo`.") }
+        if @@(data,"#icategoria") <= 0 { do rise_error(514,"Debe indicar una categoria `icategoria`.") }
+        if @@(data,"#icuenta") <= 0 { do rise_error(515,"Debe indicar una cuenta de cheques `icuenta`.") }
 
         new p
         {
@@ -19,7 +19,7 @@ module ":erp.efectivo.movimientos"
         }
 
         regs = dbr.num(db,"SELECT COUNT(sys_pk) regs FROM movcuenta WHERE icuenta = @icuenta AND referencia = @referencia;",p)
-        if regs > 0 { do rise_error(500,"La referencia proporcionada ya se encuentra en uso.") }
+        if regs > 0 { do rise_error(516,"La referencia proporcionada ya se encuentra en uso.") }
 
         fecha = trim(@@(data,"$fecha"))
         aplicacion = trim(@@(data,"$aplicacion"))
@@ -32,15 +32,15 @@ module ":erp.efectivo.movimientos"
             ndt_fecha = ndatetime.fromstr(fecha,"yyyy-MM-dd")
             ndt_aplicacion = ndatetime.fromstr(aplicacion,"yyyy-MM-dd")
 
-            if ndatetime.diff(ndt_aplicacion,ndt_fecha,"d") < 0 { do rise_error(500,"La fecha de aplicación no puede ser inferior a la fecha de emisión.") }
+            if ndatetime.diff(ndt_aplicacion,ndt_fecha,"d") < 0 { do rise_error(517,"La fecha de aplicación no puede ser inferior a la fecha de emisión.") }
         }
 
         new movcuenta
         {
             @"sys_pk": 0
             @"sys_guid": uuid()
-            @"sys_dtcreated*": now()
-            @"sys_timestamp*": now()
+            @"sys_dtcreated*": dbr.sql("now()")
+            @"sys_timestamp*": dbr.sql("now()")
             @"sys_info": ""
             @"sys_user": ""
             @"sys_lastuser": ""
@@ -146,16 +146,33 @@ module ":erp.efectivo.movimientos"
             do dbr.begin(db)
             start_transaction = @true
         }
+
+        ref params = record.copy(movcuenta,"ingreso,egreso,icuenta")
+
+        // Validar saldo de la cuenta.
+        saldo_cuenta = dbr.num(db,"SELECT (IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) + @ingreso - @egreso) FROM movcuenta WHERE icuenta = @icuenta",params)
+        if saldo_cuenta < 0 {
+            // Permitir sobregiro de la cuenta.
+            priv_id = "GD24:DET019:"+@@(params,"$icuenta")
+            do dbr.apps.action.grant(priv_id)
+        }
         
+        // Crear movimiento de cuenta
         do dbr.insert(db,"movcuenta",movcuenta)
+        mov_sys_pk = dbr.num(db,"select last_insert_id();",@null)
         
         if start_transaction { do dbr.commit(db) }
-        return dbr.num(db,"select last_insert_id();",@null)
+        return mov_sys_pk
 
         exception
         {
+            code = last_error_code()
+            error = last_error()
+
             if start_transaction { do dbr.rollback(db) }
-            do rise_error(last_error_code(),last_error())
+            if isset("@@_action_context") { do dbr.apps.action.log() }
+            
+            do rise_error(code,error)
         }
     }
 

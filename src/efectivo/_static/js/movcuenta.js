@@ -110,11 +110,30 @@ var mov=
 			return;
 		}
 
-        let url = InduxsoftCrudlModel.UrlAddParameter(data.url,"act","download");
-		
+        let url = InduxsoftCrudlModel.UrlAddParameter(data.url,"act","dwn-adjunto");
         // window.location.href = url;
         window.open(url,"_blank");
 	},
+    remover()
+    {
+        let item = this.data_preview;
+		if(!item)
+		{
+			alert("Debe seleccionar un elemento");
+			return;
+		}
+
+        let url = InduxsoftCrudlModel.UrlAddParameter(item.url,"act","del-adjunto");
+        fetch(url).then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+                return
+            }
+            this.media_list.removeMediaByIndex(item.index);
+        })
+        .catch(error => { alert(error.message ?? JSON.stringify(error)) })
+    },
     DataRowSelected(msg=true)
     {
         if(!this.table_cuentas)return;

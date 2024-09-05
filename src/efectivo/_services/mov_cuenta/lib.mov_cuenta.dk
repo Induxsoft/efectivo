@@ -184,6 +184,8 @@ module ":mov"
 
     upload::&db,&params,&data
     {
+        do dbr.apps.action.grant("GD25")
+
         ref files = @@(@http_context,"&request/files")
         if isnull(data) { ref data:record.create() }
         if isnull(files) || @count(files) < 1 { return }
@@ -204,7 +206,7 @@ module ":mov"
             ref file = @item(files,i)
             filename = limpiarTexto(@@(file,"$filename"))
             filepath = path.concat(attachment_path,filename)
-            endpoint = "/efectivo/_services/mov_cuenta/?cta="+@@(params,"$cuenta")+"&mov="+@@(params,"$movimiento")+"&filename="+filename
+            endpoint = "/efectivo/_services/mov_cuenta/?cuenta="+@@(params,"$cuenta")+"&movimiento="+@@(params,"$movimiento")+"&filename="+filename
             do file.copy(@@(file,"$temp_file"),filepath)
 
             new obj
@@ -217,17 +219,28 @@ module ":mov"
         }
 
         return uploaded
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
 
     download::&db,&params
     {
+        do dbr.apps.action.grant("GD10")
+
         attachment_path = dbr.vars.getd(db,"movcuenta_attachment_path",@default_movcuenta_attachment_path)
         attachment_path = replace_path_macros(attachment_path,params)
 
         if attachment_path == "" { do rise_error(500,"Ruta física de base no esta definida.") }
-
         filename = @@(params,"$filename")
         filepath = path.concat(attachment_path,filename)
+        if not(file.exists(filepath)) { do rise_error(404,"No fue posible encontrar el archivo adjunto solicitado o no existe.") }
         
         // Establecer encabezado de respuesta http
         @http_context<"response/headers/content-type"> : "application/octet-stream;"
@@ -238,6 +251,37 @@ module ":mov"
         @http_context<"response/output"> : "binary"
         // Asignar la respuesa de salida
         @http_context<"response/binary*"> : file.rbytes(filepath) //Lee y devuelve el array de bytes del archivo
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
+    }
+
+    delete::&db,&params
+    {
+        do dbr.apps.action.grant("GD25")
+
+        attachment_path = dbr.vars.getd(db,"movcuenta_attachment_path",@default_movcuenta_attachment_path)
+        attachment_path = replace_path_macros(attachment_path,params)
+
+        if attachment_path == "" { do rise_error(500,"Ruta física de base no esta definida.") }
+        
+        filepath = path.concat(attachment_path,@@(params,"$filename"))
+        if file.exists(filepath) { do file.delete(filepath) }
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
     }
 
     #! getAdjuntos::&db,&params,&data
@@ -258,7 +302,7 @@ module ":mov"
             file = list.str(files,i)
             filename = file.name(file)
             filepath = path.concat(attachment_path,filename)
-            endpoint = "/efectivo/_services/mov_cuenta/?cta="+@@(params,"$cuenta")+"&mov="+@@(params,"$movimiento")+"&filename="+filename
+            endpoint = "/efectivo/_services/mov_cuenta/?cuenta="+@@(params,"$cuenta")+"&movimiento="+@@(params,"$movimiento")+"&filename="+filename
 
             new obj
             {

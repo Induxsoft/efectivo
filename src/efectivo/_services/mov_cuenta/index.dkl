@@ -5,12 +5,12 @@ module ""
     #include "functions.dkh"
     #include "serialize.dkh"
     #include "dbr.dkh"
-    #include "../../_lib/config.dk"
-    #include "../../_lib/lib.dk"
     #include "dbr.apps.dkl"
     #include "dbr.vars.dkl"
     #include "dbr.events.dkl"
     #include "dbr.security.dkl"
+    #include "../../_lib/config.dk"
+    #include "../../_lib/lib.dk"
 
     http_cors::
 	{
@@ -27,12 +27,13 @@ module ""
         {
             @"success":@true
         }
+
+        @http_context<"response/headers/Content-Type"> : "application/json;charset=utf-8"
+        @http_context<"response/output"> : "text"
         
         that
         
-        @http_context<"response/headers/Content-Type">:"application/json;charset=utf-8"
-        @http_context<"response/output">:"text"
-        @http_context<"response/text">: to.json(responseJSONdata)
+        @http_context<"response/text"> : to.json(responseJSONdata)
     }
 
 	ref @DB=@null
@@ -95,8 +96,12 @@ module ""
                         ref data_response:mov.upload(db,getData,postData)
                         break
                     }
-                    case "download" {
+                    case "dwn-adjunto" {
                         do mov.download(db,getData)
+                        break
+                    }
+                    case "del-adjunto" {
+                        do mov.delete(db,getData)
                         break
                     }
                     case "getadjuntos" {

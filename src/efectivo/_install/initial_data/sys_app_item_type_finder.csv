@@ -1,0 +1,2 @@
+det,class,sql_query,primarykey,keyfield,textfield
+DET019,*,"SELECT sys_pk, COALESCE(clabe,numcuenta,codcuenta) clabe, nombre FROM chequera WHERE IF(IFNULL(@primarykey,0)=0, clabe=@search OR numcuenta=@search OR nombre LIKE CONCAT('%',@search,'%'), sys_pk=@primarykey);",sys_pk,clabe,nombre
