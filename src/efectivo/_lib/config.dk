@@ -11,6 +11,8 @@ module
 	// Formato de moneda (dkl)
 	@FMT_MONEY = "$ "+"#"+@THOUSANDS_SEPARATOR+"0"+@DECIMAL_SEPARATOR+padright("",@DECIMAL_PRECISION,"0")
 
+	@default_movcuenta_attachment_path = "data/@qname/efectivo/movcuenta/@cuenta/@movimiento/"
+
 	//* ======================================== [ _STATIC RESOURCES ]
 	@CSS_MAIN = "/$/efectivo/css/main.css"
 	@JS_BANCO = "/$/efectivo/js/banco.js"

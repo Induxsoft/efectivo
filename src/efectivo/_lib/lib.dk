@@ -8,6 +8,22 @@ module "lib.dk"
         return date_str(now(),str(fmt))
     }
 
+    function ifempty(s,d)
+    {
+        if trim(str(s)) == "" { return str(d) }
+        return str(s)
+    }
+
+    function isempty(s)
+    {
+        return trim(str(s)) == ""
+    }
+
+    function between(value, min, max)
+    {
+        return value >= min && value <= max
+    }
+
     function date_format(str,fmt)
     {
         fecha = trim(str(str))
@@ -27,6 +43,13 @@ module "lib.dk"
             do clear_exceptions()
             return ""
         }
+    }
+
+    function number_format(value)
+    {
+        number = parse.num(value)
+        format = "#"+@THOUSANDS_SEPARATOR+"0"+@DECIMAL_SEPARATOR+padright("",@DECIMAL_PRECISION,"0")
+        return format(number,format)
     }
 
     function _post_get()

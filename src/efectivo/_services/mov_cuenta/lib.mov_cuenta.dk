@@ -164,49 +164,112 @@ module ":mov"
         }
     }
 
+    function replace_path_macros(path,&params)
+    {
+        if not(isset("@http_context")) && isset("@crud_context") { ref @http_context = ifnull(@@(@crud_context,"&http"),record.create()) }
+
+        _prt = ifstr(parse.bool(@@(@http_context,"$request/headers/HTTPS")),"https","http")
+        _hst = @@(@http_context, "$request/headers/HTTP_HOST")
+        _cnn = @@(@http_context,"$session/idp/qname")
+
+        path = replace(path, "@protocol", _prt)
+        path = replace(path, "@host", _hst)
+        path = replace(path, "@qname", _cnn)
+        go foreach.fstr(key:key,value:val) with(params) {
+            path = replace(path,"@"+key,val)
+        }
+
+        return path
+    }
+
     upload::&db,&params,&data
     {
-        path=path.concat(@PATH_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
-        url=path.concat(@URL_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
+        ref files = @@(@http_context,"&request/files")
+        if isnull(data) { ref data:record.create() }
+        if isnull(files) || @count(files) < 1 { return }
 
-        do dir.ensure(path)
-    
-        ref files=@@(@http_context,"&request/files")
+        if @@(params,"$cuenta")=="" { params<"cuenta"> : @@(data,"$cta") }
+        if @@(params,"$movimiento")=="" { params<"movimiento"> : @@(data,"$mov") }
 
+        attachment_path = dbr.vars.getd(db,"movcuenta_attachment_path",@default_movcuenta_attachment_path)
+        attachment_path = replace_path_macros(attachment_path,params)
+
+        if attachment_path == "" { do rise_error(500,"Ruta física de base no esta definida.") }
+
+        do dir.ensure(attachment_path)
+        ref uploaded = list.create()
+        
         for i = 0; i < @count(files)
         {
-            ref file=@item(files,i)
+            ref file = @item(files,i)
+            filename = limpiarTexto(@@(file,"$filename"))
+            filepath = path.concat(attachment_path,filename)
+            endpoint = "/efectivo/_services/mov_cuenta/?cta="+@@(params,"$cuenta")+"&mov="+@@(params,"$movimiento")+"&filename="+filename
+            do file.copy(@@(file,"$temp_file"),filepath)
 
-            path_file=path.concat(path,mov.limpiarTexto(@@(file,"$filename")))
-            do file.copy(@@(file,"$temp_file"),path_file)
+            new obj
+            {
+                @"url": endpoint
+                @"mini": filepath
+                @"name": filename
+            }
+            do list.add(uploaded,obj)
         }
+
+        return uploaded
     }
+
+    download::&db,&params
+    {
+        attachment_path = dbr.vars.getd(db,"movcuenta_attachment_path",@default_movcuenta_attachment_path)
+        attachment_path = replace_path_macros(attachment_path,params)
+
+        if attachment_path == "" { do rise_error(500,"Ruta física de base no esta definida.") }
+
+        filename = @@(params,"$filename")
+        filepath = path.concat(attachment_path,filename)
+        
+        // Establecer encabezado de respuesta http
+        @http_context<"response/headers/content-type"> : "application/octet-stream;"
+        // Indicar que se trata de un archivo adjunto y su nombre
+        // Más información en: https://developer.mozilla.org/es/docs/Web/HTTP/Headers/Content-Disposition
+        @http_context<"response/headers/content-disposition"> : "attachment; filename="+filename
+        // Indicar tipo de respuesta
+        @http_context<"response/output"> : "binary"
+        // Asignar la respuesa de salida
+        @http_context<"response/binary*"> : file.rbytes(filepath) //Lee y devuelve el array de bytes del archivo
+    }
+
     #! getAdjuntos::&db,&params,&data
     {
-        path=path.concat(@PATH_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
-        if not(dir.exists(path)){return list.create()}
+        ref attachments = list.create()
+        
+        if @@(params,"$cuenta")=="" { params<"cuenta"> : @@(data,"$cta") }
+        if @@(params,"$movimiento")=="" { params<"movimiento"> : @@(data,"$mov") }
 
-        url=path.concat(@URL_ADJUNTOS_MOVCUENTA,@@(data,"$sys_guid"))
+        attachment_path = dbr.vars.getd(db,"movcuenta_attachment_path",@default_movcuenta_attachment_path)
+        attachment_path = replace_path_macros(attachment_path,params)
 
-        ref l=list.create()
-
-        ref files=list.files(path,"*")
+        if not(dir.exists(attachment_path)) { return attachments }
+        
+        ref files = list.files(attachment_path,"*")
         for i = 0; i < @count(files)
         {
-            file=list.str(files,i)
-            namefile=mov.limpiarTexto(file.name(file))
-            path_file=path.concat(path,namefile)
-            url_file=path.concat(url,namefile)
+            file = list.str(files,i)
+            filename = file.name(file)
+            filepath = path.concat(attachment_path,filename)
+            endpoint = "/efectivo/_services/mov_cuenta/?cta="+@@(params,"$cuenta")+"&mov="+@@(params,"$movimiento")+"&filename="+filename
 
-            new f
+            new obj
             {
-                @"min":url_file
-                @"url":url_file
-                @"name":namefile
+                @"url": endpoint
+                @"mini": filepath
+                @"name": filename
             }
-            do list.add(l,f)
+            do list.add(attachments,obj)
         }
-        return l
+
+        return attachments
     }
     #! limpiarTexto::texto
 	{

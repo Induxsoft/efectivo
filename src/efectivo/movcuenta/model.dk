@@ -6,6 +6,8 @@ module "model"
 
     mov.prepareView::&db,&params,&data
     {
+        if not(field.exist(params,"decimals")){ params<"decimals"> : parse.num(dbr.vars.get(db,"FXCA001")) }
+
         switch @@(params,"$_view")
         {
             case "deposito"
@@ -112,6 +114,7 @@ module "model"
         
     mov.obtenerMovimientosCuenta::&db,&params
     {
+        if not(field.exist(params,"decimals")){ params<"decimals"> : parse.num(dbr.vars.get(db,"FXCA001")) }
         // if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ESTADO_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
 
         sql = "SELECT sys_pk,sys_guid,nombre FROM chequera WHERE sys_pk = @_entity_id;"
@@ -127,6 +130,8 @@ module "model"
             mov.sys_pk,
             mov.sys_guid,
             mov.sys_recver,
+            cta.sys_guid AS `cta`,
+            mov.sys_guid AS `mov`,
             doc.const AS documento,
             mov.referencia,
             DATE_FORMAT(mov.aplicacion,'%Y-%m-%d') AS aplicacion,
@@ -152,6 +157,7 @@ module "model"
             mc.notas notas_mc,
             mc.api_confirmacion,mc.api_referencia,mc.api_url
         FROM movcuenta AS mov
+            INNER JOIN chequera AS cta ON mov.icuenta = cta.sys_pk
             INNER JOIN cdocumentos AS doc ON doc.id = mov.tipo
             INNER JOIN categoria AS cat ON cat.sys_pk = mov.icategoria
             left join movcta_confirmacion mc on mov.sys_pk=mc.ref_mov

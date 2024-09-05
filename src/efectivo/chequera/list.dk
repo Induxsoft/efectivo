@@ -19,7 +19,7 @@ module "list.dk"
         link_nombre = replace(@MOV_MOVIMIENTOS,'@cuenta',@@(cheque,'$sys_pk'))
         link_editar = "./" + str(@@(cheque,'sys_pk')) + "/"
 
-        cheque<"saldo">: format(@@(cheque,'#saldo'),'$ #,0.00')
+        cheque<"saldo">: format(@@(cheque,'#saldo'),'$ #,0.0000')
         // cheque<"link_nombre">: ftext('<a href="#<link_nombre>" style="text-decoration: none;">#<@@(cheque,"$nombre")></a>')
         cheque<"_actions">: ftext('
             <div class="no-print" style="display:flex;justify-content:center;align-items: center; gap: 6px;">

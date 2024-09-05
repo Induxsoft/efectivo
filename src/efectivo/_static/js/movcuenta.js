@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded",()=>{mov.init();});
-
 var mov=
 {
     init()
@@ -104,14 +103,17 @@ var mov=
 	},
     preview()
 	{
-		var data=this.data_preview;
+		let data = this.data_preview;
 		if(!data)
 		{
 			alert("Debe seleccionar un elemento");
 			return;
 		}
+
+        let url = InduxsoftCrudlModel.UrlAddParameter(data.url,"act","download");
 		
-		window.open(data.url,"_blank");
+        // window.location.href = url;
+        window.open(url,"_blank");
 	},
     DataRowSelected(msg=true)
     {
@@ -132,11 +134,9 @@ var mov=
         
         for (let i = 0; i < fields.length; i++) 
         {
-           var elm = fields[i];
-           console.log(elm);
+            var elm = fields[i];
             if(elm)
             {
-                console.log("12121212");
                 elm.removeAttribute("data");
                 elm.setAttribute("data",JSON.stringify(row));    
             }
@@ -250,22 +250,26 @@ var mov=
         if(!file)return;
         if(file.value.trim()=="")return;
 
-        var data=new FormData();
+        var data = new FormData();
+
+        if(act.trim()!="")data.append("act",act);
+        if(_field_.trim()!="")data.append("_field_",_field_);
+        
+        if(fdata)
+        {
+            data.append("cta",fdata["cta"]);
+            data.append("mov",fdata["mov"]);
+            // for(var key in fdata) 
+            // {
+            //     data.append(key,fdata[key]);
+            // }
+        }
+
         for(let i=0;i<file.files.length;i++)
         {
             var f=file.files[i];
             data.append(f.name,f);
         }
-        if(fdata)
-        {
-            for(var key in fdata) 
-            {
-                data.append(key,fdata[key]);
-            }
-        }
-
-        if(act.trim()!="")data.append("act",act);
-        if(_field_.trim()!="")data.append("_field_",_field_);
 
         InduxsoftCrudlModel.InvokeService(mov.url_mov_cuenta,data,
         function(data)

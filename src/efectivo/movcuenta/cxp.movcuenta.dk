@@ -4,8 +4,9 @@ module "list.dk"
 {
     #include "functions.dkh"
     #include "serialize.dkh"
-    #include "../_lib/icons.dk"
     #include "../_lib/config.dk"
+    #include "../_lib/lib.dk"
+    #include "../_lib/icons.dk"
 
     do @context.begin(@crud_context)
     
@@ -13,7 +14,7 @@ module "list.dk"
     ref Saldos = ifnull(@('&./saldos'),record.create())
     ref Movimientos = ifnull(@('&./movimientos'),list.create())
 
-    FMT_MONEY = "$ "+"#"+@THOUSANDS_SEPARATOR+"0"+@DECIMAL_SEPARATOR+padright("",@DECIMAL_PRECISION,"0")
+    @DECIMAL_PRECISION = @("#parameters/decimals")
     
     ref get = @("&parameters")
 
@@ -161,11 +162,11 @@ module "list.dk"
                 {
                     tr
                     {
-                        td(class="text-end" id="saldo_inicial"){$"#<format(@@(Saldos,'#saldo_inicial'),FMT_MONEY)>"}
-                        td(class="text-end" id="ingresos"){$"#<format(@@(Saldos,'#ingresos'),FMT_MONEY)>"}
-                        td(class="text-end" id="egresos"){$"#<format(@@(Saldos,'#egresos'),FMT_MONEY)>"}
-                        td(class="text-end" id="saldo_alfinal"){$"#<format(@@(Saldos,'#saldo_alfinal'),FMT_MONEY)>"}
-                        td(class="text-end" id="saldo_total"){$"#<format(@@(Saldos,'#saldo_total'),FMT_MONEY)>"}
+                        td(class="text-end" id="saldo_inicial"){$"$ #<number_format(@@(Saldos,'#saldo_inicial'))>"}
+                        td(class="text-end" id="ingresos"){$"$ #<number_format(@@(Saldos,'#ingresos'))>"}
+                        td(class="text-end" id="egresos"){$"$ #<number_format(@@(Saldos,'#egresos'))>"}
+                        td(class="text-end" id="saldo_alfinal"){$"$ #<number_format(@@(Saldos,'#saldo_alfinal'))>"}
+                        td(class="text-end" id="saldo_total"){$"$ #<number_format(@@(Saldos,'#saldo_total'))>"}
                     }
                 }
             }
@@ -183,8 +184,8 @@ module "list.dk"
                             "edit-th"(type="NoEditable" field="documento"){$"Documento"}
                             "edit-th"(type="NoEditable" field="referencia"){$"Referencia"}
                             "edit-th"(type="NoEditable" field="aplicacion"){$"Aplicación"}
-                            "edit-th"(type="NoEditable" field="ingreso" textalign="end" format="true" decs="2" prefix="$ " thousandssep="true"){$"Ingreso"}
-                            "edit-th"(type="NoEditable" field="egreso" textalign="end" format="true" decs="2" prefix="$ " thousandssep="true"){$"Egreso"}
+                            "edit-th"(type="NoEditable" field="ingreso" textalign="end" format="true" decs="#<@DECIMAL_PRECISION>" prefix="$ " thousandssep="true"){$"Ingreso"}
+                            "edit-th"(type="NoEditable" field="egreso" textalign="end" format="true" decs="#<@DECIMAL_PRECISION>" prefix="$ " thousandssep="true"){$"Egreso"}
                             "edit-th"(type="NoEditable" field="categoria"){$"Categoria"}
                             "edit-th"(type="NoEditable" field="beneficiario"){$"Beneficiario"}
                             "edit-th"(type="NoEditable" field="fconciliado"){$"Conciliado"}

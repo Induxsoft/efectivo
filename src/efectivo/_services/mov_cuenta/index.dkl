@@ -63,37 +63,53 @@ module ""
 		do setDB(db)
         ref data_response=@null
 
-        switch @@(getData,"$_program")
+        switch @@(getData,"$_svc")
         {
             case "mov_cuenta"
             {
                 #include "lib.mov_cuenta.dk"
 
-                switch tolower(@@(postData,"act"))
+                switch tolower(ifempty(@@(postData,"$act"),@@(getData,"$act")))
                 {
-                    case "confirmar"{ ref data_response=mov.confirmar(db,getData,postData) }
-                    case "conciliar"{ref data_response=mov.conciliar(db,getData,postData) }
-                    case "auditar"{ ref data_response=mov.auditar(db,getData,postData) }
-                    case "cancelar"{ ref data_response=mov.cancelar(db,getData,postData) }
-                    case "contabilizar"{ do mov.contabilizar(db,getData,postData) }
-                    case "upload"{ do mov.upload(db,getData,postData) }
-                    case "getadjuntos"{ ref data_response=mov.getAdjuntos(db,getData,postData) }
-                    default
-                    {
-                        do rise_error(500,"Acción no definida mov_cuenta")
+                    case "confirmar" {
+                        ref data_response:mov.confirmar(db,getData,postData)
                         break
                     }
+                    case "conciliar" {
+                        ref data_response:mov.conciliar(db,getData,postData)
+                        break
+                    }
+                    case "auditar" {
+                        ref data_response:mov.auditar(db,getData,postData)
+                        break
+                    }
+                    case "cancelar" {
+                        ref data_response:mov.cancelar(db,getData,postData)
+                        break
+                    }
+                    case "contabilizar" {
+                        do mov.contabilizar(db,getData,postData)
+                        break
+                    }
+                    case "upload" {
+                        ref data_response:mov.upload(db,getData,postData)
+                        break
+                    }
+                    case "download" {
+                        do mov.download(db,getData)
+                        break
+                    }
+                    case "getadjuntos" {
+                        ref data_response:mov.getAdjuntos(db,getData,postData)
+                        break
+                    }
+                    default { do rise_error(500,"Acción no definida mov_cuenta") }
                 }
-                break
             }
-            default
-            {
-                do rise_error(500,"Acción no definida")
-                break
-            }
+            default { do rise_error(500,"Acción no definida") }
         }
 
-        response<"data*">:data_response
+        response<"data*"> : data_response
 
 		exception
 		{
