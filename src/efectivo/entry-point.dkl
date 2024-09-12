@@ -14,13 +14,14 @@ module "Controller configs"
 	#include "_lib/lib.dk"
 	#include "./movimientos.dkh"
 
-	if @@(@http_context,"$session/user/ids") == "" {
-		@http_context<"response/headers/location"> : "/"
-		return
-	}
-
 	@base_path="efectivo"
 	@path_root="" // Establezca una ruta de ser necesario
+
+	if @@(@http_context,"$session/user/ids") == "" {
+		if file.exists("webshell/lost.dk") { include "webshell/lost.dk" }
+		else { @http_context<"response/headers/location"> : "/" }
+		return
+	}
 	
 	// Enmascaramiento de enrutamiento (Ejemplos)
 	// Definición de patrones de rutas con base en parámetros GET (request/get)
