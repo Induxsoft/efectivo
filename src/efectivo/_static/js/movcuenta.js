@@ -1,10 +1,11 @@
-document.addEventListener("DOMContentLoaded",()=>{mov.init();});
 var mov=
 {
+    tableId:"",
+
     init()
     {
+        this.table_cuentas=document.getElementById(this.tableId);
         this.btn_confirmar=document.getElementById("btn_add_entity_confirmar");
-        this.table_cuentas=document.getElementById("table_cuentas");
 
         this.fecha_aplicacion=document.getElementById("fecha_aplicacion");
         this.check_confirmar=document.getElementById("check_confirmar");
@@ -29,9 +30,8 @@ var mov=
                 }
             }
         }
-        if(this.btn_confirmar)this.btn_confirmar.addEventListener("click",
-        ()=>
-        {
+
+        if(this.btn_confirmar)this.btn_confirmar.addEventListener("click", () => {
             var data=mov.DataRowSelected();
             if(!data)return;
             
@@ -44,13 +44,13 @@ var mov=
             mov.service(mov.url_mov_cuenta,data,"confirmar",
             (result)=>
             {
-                data.sys_recver=result.sys_recver_mov + 1;
-                data.notas_mc=result.notas??"";
+                data.sys_recver = result.sys_recver_mov + 1;
+                data.notas_mc = result.notas??"";
                 mov.UpdateRow(data,mov.table_cuentas.CurrentRowIndex());
 
                 mov.changeValueData(data);
                 mov.hideModal("modal_entity_mov_cuenta");
-
+                // window.location.reload();
             });
         });
 
@@ -64,9 +64,7 @@ var mov=
             }
         }
 
-        if(this.adjuntos)this.adjuntos.addEventListener("change",
-        ()=>
-        {
+        if(this.adjuntos)this.adjuntos.addEventListener("change", () => {
             if(this.adjuntos.value.trim()=="")return;
 
             var data=mov.DataRowSelected();
@@ -157,7 +155,7 @@ var mov=
             if(elm)
             {
                 elm.removeAttribute("data");
-                elm.setAttribute("data",JSON.stringify(row));    
+                elm.setAttribute("data",JSON.stringify(row));
             }
         }
     },
@@ -230,7 +228,7 @@ var mov=
         mov.service(mov.url_mov_cuenta,data,fact,
         (result)=>
         {
-            data.sys_recver=result.sys_recver +1 ;
+            data.sys_recver = result.sys_recver + 1;
 
             if(target && act!=99)
             {

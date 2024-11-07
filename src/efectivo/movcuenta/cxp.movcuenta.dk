@@ -4,6 +4,7 @@ module "list.dk"
 {
     #include "functions.dkh"
     #include "serialize.dkh"
+    #include "uielements.v12.dkl"
     #include "../_lib/config.dk"
     #include "../_lib/lib.dk"
     #include "../_lib/icons.dk"
@@ -13,19 +14,50 @@ module "list.dk"
     ref Cuenta = ifnull(@('&./cuenta'),record.create())
     ref Saldos = ifnull(@('&./saldos'),record.create())
     ref Movimientos = ifnull(@('&./movimientos'),list.create())
+    ref titles = ifnull(@("&./titles"),record.create())
 
+    ref @_GET = @("&parameters")
     @DECIMAL_PRECISION = @("#parameters/decimals")
     
-    ref get = @("&parameters")
+    @_entities_type = @("$parameters/_entities_type")
+    @_entity_id = @("$parameters/_entity_id")
+    table_id = "tbl_"+@_entities_type
 
-    get<"filter-mode">: ifstr(trim(@@(get,"filter-mode"))!="", @@(get,"filter-mode"), "month")
-    get<"year">: ifstr(trim(@@(get,"year"))!="", @@(get,"year"), str(ndatetime.year(ndatetime.now())))
-    get<"month">: ifstr(trim(@@(get,"month"))!="", @@(get,"month"), str(ndatetime.month(ndatetime.now())))
+    ref list_years = list_years(10,0)
+    fdr_year_opt = ""
+    for i = 0; i < list.count(list_years) { fdr_year_opt = fdr_year_opt + list.str(list_years,i) + "," }
+    fdr_year_opt = rremove(fdr_year_opt,1)
 
-    new select
+    new fdr_init
     {
-        @"0":"No"
-        @"1":"Sí"
+        @"fdr_mode": field.dstr(@_GET,"fdr_mode","month")
+        // [month]
+        @"fdr_year": field.dnum(@_GET,"fdr_year",@curr_year)
+        @"fdr_month": field.dnum(@_GET,"fdr_month",@curr_month)
+        // [lastdays]
+        @"fdr_range": field.dnum(@_GET,"fdr_range",30)
+        // [range]
+        @"fdr_from": field.dstr(@_GET,"fdr_from","")
+        @"fdr_to": field.dstr(@_GET,"fdr_to","")
+    }
+
+    new fdr_field
+    {
+        @"datatable*": from.json('[
+            {"id":1, "const":"Creación"},
+            {"id":2, "const":"Aplicación"},
+        ]')
+        @"id": "fdr_field"
+        member "attributes"
+        {
+            @"name": "fdr_field"
+            @"class": "induxsoft-form-select"
+            @"title": "Elegir método de filtro para el rango de fechas"
+            @"onchange": "document.querySelector('#form_filter').submit();"
+        }
+        @"value_field": "id"
+        @"text_field": "const"
+        @"selected": @("#parameters/fdr_field")
     }
 
     for i = 0; i < @count(Movimientos)
@@ -35,116 +67,125 @@ module "list.dk"
         if not(@@(mov,"#cancelado"))
         {
             jsonmov=to.json(mov)
-            mov<"btn_confirmado">: "<button class='' style='display:flex' data='"+jsonmov+"' onclick='mov.MovCuentaModal(null,event)'>Confirmación</button>"
+            mov<"btn_confirmado">: "<button data='"+jsonmov+"' style='cursor:pointer;' onclick='mov.MovCuentaModal(null,event)'>Confirmación</button>"
             mov<"fconciliado">:"<input type='checkbox' id='check_conciliado' data='"+jsonmov+"' "+ifstr(@@(mov,"#conciliado"),"checked","")+"='true'  onchange='mov.changeCheck(null,0,event)'>"
             mov<"fauditado">:"<input type='checkbox' id='check_auditado' data='"+jsonmov+"' "+ifstr(@@(mov,"#auditado"),"checked","")+"='true'  onchange='mov.changeCheck(null,1,event)'>"
-            mov<"fcancelado">:"<button data='"+jsonmov+"' onclick='mov.changeCheck(null,99,event)'>Cancelar</button>"
+            mov<"fcancelado">:"<button data='"+jsonmov+"' style='cursor:pointer;' onclick='mov.changeCheck(null,99,event)'>Cancelar</button>"
         }
     }
-    #$
-    div(class="container-fluid")
+
+    function print_buttons()
     {
+        btn_cls = "btn btn-sm border-secondary induxsoft-corners btn-main-action"
+        #$
+        a(href="#<@MOV_DEPOSITO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Depósito"}
+        a(href="#<@MOV_RETIRO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Retiro"}
+        a(href="#<@MOV_TRASPASO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Transferencia"}
+        #!
+    }
+    point @buttons to print_buttons
+    new nav_config
+    {
+        @"title":"Movimientos"
+        @"urlexit": @EFC_CHEQUERA
+        @"buttons*": @buttons
+    }
+
+    #$
+    div(class="container-fluid" id="view")
+    {
+        link(href="#<@CSS_MAIN>" rel="stylesheet"){""}
         #!
         #include "modals.dk"
         #$
-        link(href="#<@CSS_MAIN>" rel="stylesheet"){""}
-        script(src="#<@JS_MOVCUENTA>"){""}
-        script(src="#<@JS_TABLE>"){""}
-
-        div(class="row container-section m-0 px-0 py-2 my-2 border-bottom sticky-top bg-white" id="main_action_bar")
+        
+        // Filtros y acciones
+        section(id="top_area")
         {
-            div(class="col-4 d-flex align-items-center p-0") { h5(class="tex-no-break m-0"){$"Movimientos"} }
-            div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
-            {
-                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
+            #!
+            do uie.printV12FormBar(nav_config)
+            #$
 
-                a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Depósito"}
-                a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Retiro"}
-                a(href="#<@MOV_TRASPASO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action"){$"Transferencia"}
-                a(href="#<@EFC_CHEQUERA>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_X_LG>"}
-            }
-        }
-
-        div
-        {
-            h6(class="text-muted"){$"#<@@(Cuenta,'$nombre')>"}
             form(action="." method="GET" id="form_filter" class="no-print my-1")
             {
                 div(class="d-flex align-items-center")
                 {
-                    div
+                     div
                     {
-                        select(class="induxsoft-form-select" name="tdate" onchange="document.querySelector('#form_filter').submit();")
-                        {
-                            option(value="0" "#<ifstr(@@(get,'$tdate')=='0','selected','')>"="true"){$"Creación"}
-                            option(value="1" "#<ifstr(@@(get,'$tdate')=='1' || @@(get,'$tdate')=='','selected','')>"="true"){$"Aplicación"}
-                        }
+                        ##
+                        do uie.dbSelect(fdr_field)
+                        ##
                     }
-                        div(class="flex-grow-1")
+                    div(class="flex-grow-1")
                     {
                         "filter-date-range"(
-                            "mode-field"="filter-mode"
-                            "year-field"="year"
-                            "month-field"="month"
-                            "range-field"="range"
-                            "from-field"="datefrom"
-                            "to-field"="dateto"
-                            "selection"='#<to.json(get)>'
-                            "lastdays-options"="15,30,45,60,90"
-                            "years-options"="2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024"
-                            "custom-range"="true"
                             "form"="#form_filter"
                             "auto-submit"="true"
+                            "custom-range"="true"
+                            "selection"='#<to.json(fdr_init)>'
+
+                            "mode-field"="fdr_mode"
+                            "year-field"="fdr_year"
+                            "month-field"="fdr_month"
+                            "range-field"="fdr_range"
+                            "from-field"="fdr_from"
+                            "to-field"="fdr_to"
+                            
+                            "lastdays-options"="15,30,45,60,90"
+                            "years-options"="#<fdr_year_opt>"
+                            "month-names"="Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre"
+                            
                             "label-months"="Ver por cada mes"
                             "label-days"="Últ. @lastdays días"
                             "label-custom"="Personalizado"
                             "label-from"="Desde:"
                             "label-to"="Hasta:"
-                            "month-names"="Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre"
                         ){$""}
                     }
                 }
+
                 div(class="d-flex align-items-center mt-2 d-block-sm")
                 {
-                    // label(class="ms-2"){" Confirmado"}
-                    select(id="confirmado" name="confirmado" class="induxsoft-form-select")
+                    select(id="confirmado" name="confirmado" class="induxsoft-form-select" title="Filtrar por confirmación")
                     {
-                        option(value="*" "#<ifstr(@('parameters/confirmado')=='*','selected','')>"="true"){"Todos(*)"}
-                        option(value="1" "#<ifstr(@('parameters/confirmado')=='1','selected','')>"="true"){"Confirmados"}
-                        option(value="0" "#<ifstr(@('parameters/confirmado')=='0','selected','')>"="true"){"Sin confirmar"}
+                        option(value="*" "#<ifstr(@('$parameters/confirmado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('$parameters/confirmado')=='1','selected','')>"="true"){"Confirmados"}
+                        option(value="0" "#<ifstr(@('$parameters/confirmado')=='0','selected','')>"="true"){"Sin confirmar"}
                     }
 
-                    // label(class="ms-2"){input(type="checkbox"  class="gap-2" id="conciliado" name="conciliado" )" Conciliado"}
-                    select(id="conciliado" name="conciliado" class="induxsoft-form-select")
+                    select(id="conciliado" name="conciliado" class="induxsoft-form-select" title="Filtrar por consiliación")
                     {
-                        option(value="*" "#<ifstr(@('parameters/conciliado')=='*','selected','')>"="true"){"Todos(*)"}
-                        option(value="1" "#<ifstr(@('parameters/conciliado')=='1','selected','')>"="true"){"Conciliados"}
-                        option(value="0" "#<ifstr(@('parameters/conciliado')=='0','selected','')>"="true"){"Sin conciliar"}
+                        option(value="*" "#<ifstr(@('$parameters/conciliado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('$parameters/conciliado')=='1','selected','')>"="true"){"Conciliados"}
+                        option(value="0" "#<ifstr(@('$parameters/conciliado')=='0','selected','')>"="true"){"Sin conciliar"}
                     }
-                    // label(class="ms-2"){input(type="checkbox" class="gap-2" id="auditado" name="auditado" )" Auditado"}
-                    select(id="auditado" name="auditado" class="induxsoft-form-select")
+                    
+                    select(id="auditado" name="auditado" class="induxsoft-form-select" title="Filtrar por auditados")
                     {
-                        option(value="*" "#<ifstr(@('parameters/auditado')=='*','selected','')>"="true"){"Todos(*)"}
-                        option(value="1" "#<ifstr(@('parameters/auditado')=='1','selected','')>"="true"){"Auditados"}
-                        option(value="0" "#<ifstr(@('parameters/auditado')=='0','selected','')>"="true"){"Sin auditar"}
+                        option(value="*" "#<ifstr(@('$parameters/auditado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('$parameters/auditado')=='1','selected','')>"="true"){"Auditados"}
+                        option(value="0" "#<ifstr(@('$parameters/auditado')=='0','selected','')>"="true"){"Sin auditar"}
                     }
-                    // label(class="ms-2"){input(type="checkbox" class="gap-2" id="contabilizado" name="contabilizado" )" Contabilizado"}
-                    select(id="contabilizado" name="contabilizado" class="induxsoft-form-select")
+                    
+                    select(id="contabilizado" name="contabilizado" class="induxsoft-form-select" title="Filtrar por contabilizados")
                     {
-                        option(value="*" "#<ifstr(@('parameters/contabilizado')=='*','selected','')>"="true"){"Todos(*)"}
-                        option(value="1" "#<ifstr(@('parameters/contabilizado')=='1','selected','')>"="true"){"Contabilizados"}
-                        option(value="0" "#<ifstr(@('parameters/contabilizado')=='0','selected','')>"="true"){"Sin contabilizar"}
+                        option(value="*" "#<ifstr(@('$parameters/contabilizado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('$parameters/contabilizado')=='1','selected','')>"="true"){"Contabilizados"}
+                        option(value="0" "#<ifstr(@('$parameters/contabilizado')=='0','selected','')>"="true"){"Sin contabilizar"}
                     }
-                    // label(class="ms-2"){input(type="checkbox" class="gap-2" id="cancelado" name="cancelado" )" Cancelado"}
-                    select(id="cancelado" name="cancelado" class="induxsoft-form-select")
+                    
+                    select(id="cancelado" name="cancelado" class="induxsoft-form-select" title="Filtrar por cancelaciones")
                     {
-                        option(value="*" "#<ifstr(@('parameters/cancelado')=='*','selected','')>"="true"){"Todos(*)"}
-                        option(value="1" "#<ifstr(@('parameters/cancelado')=='1','selected','')>"="true"){"Cancelados"}
-                        option(value="0" "#<ifstr(@('parameters/cancelado')=='0','selected','')>"="true"){"Sin cancelar"}
+                        option(value="*" "#<ifstr(@('$parameters/cancelado')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('$parameters/cancelado')=='1','selected','')>"="true"){"Cancelados"}
+                        option(value="0" "#<ifstr(@('$parameters/cancelado')=='0','selected','')>"="true"){"Vigentes"}
                     }
                 }
             }
+
             hr{}
+            
+            h6(class="text-muted"){$"#<@@(Cuenta,'$nombre')>"}
             table(class="table table-sm table-bordered")
             {
                 thead
@@ -170,49 +211,102 @@ module "list.dk"
                     }
                 }
             }
+        }
 
-            div(class="")
+        // Contenido principal
+        section(id="work_area")
+        {
+            div(class="show-on-print")
             {
-                "edit-table"(class="table" id="table_cuentas" data="#<to.json(Movimientos)>" )
+                p(class="text-center my-0"){$"#<@@(titles,'$title')>"}
+                p(class="text-center my-0"){$"#<@@(titles,'$subtitle')>"}
+                p(class="text-center my-0"){$"#<@@(titles,'$subtitle_2')>"}
+
+                div(class="row")
                 {
-                    "edit-thead"
+                    div(class="col-3 text-start")
                     {
-                        "edit-tr"
-                        {
-                            "edit-th"(type="NoEditable" field="btn_confirmado"){$""}
-                            "edit-th"(type="NoEditable" keyfield="confirmar" field="fconfirmado"){$"Confirmado"}
-                            "edit-th"(type="NoEditable" field="documento"){$"Documento"}
-                            "edit-th"(type="NoEditable" field="referencia"){$"Referencia"}
-                            "edit-th"(type="NoEditable" field="aplicacion"){$"Aplicación"}
-                            "edit-th"(type="NoEditable" field="ingreso" textalign="end" format="true" decs="#<@DECIMAL_PRECISION>" prefix="$ " thousandssep="true"){$"Ingreso"}
-                            "edit-th"(type="NoEditable" field="egreso" textalign="end" format="true" decs="#<@DECIMAL_PRECISION>" prefix="$ " thousandssep="true"){$"Egreso"}
-                            "edit-th"(type="NoEditable" field="categoria"){$"Categoria"}
-                            "edit-th"(type="NoEditable" field="beneficiario"){$"Beneficiario"}
-                            "edit-th"(type="NoEditable" field="fconciliado"){$"Conciliado"}
-                            "edit-th"(type="NoEditable" field="fauditado"){$"Auditado"}
-                            "edit-th"(type="NoEditable" field="fcancelado"){$"Cancelado"}
-                            "edit-th"(type="NoEditable" field="fcontabilizado"){$"Contabilizado"}
-                            // "edit-th"(type="NoEditable" field="poliza"){$"Poliza"}
-                            "edit-th"(type="NoEditable" field="creado"){$"Creado"}
-                            "edit-th"(type="NoEditable" field="notas"){$"Notas"}
-                        }
+                        small(class="d-block"){ $"#<cut(@('$http/session/user/name'),25)>" }
+                        small(class="d-block"){ $"#<date_str(now(),'dd/MMM/yyyy')>" }
                     }
-                    /* "edit-tbody"
+                    div(class="col-6 text-center")
                     {
-                        // contenido...
-                    } */
+                        h4(class=""){$"Movimientos de efectivo"}
+                    }
+                    div(class="col-3 text-end")
+                    {
+                        small(class="d-block" id="lbl_filter_1"){$""}
+                        small(class="d-block" id="lbl_filter_2"){$""}
+                        small(class="d-block" id="lbl_filter_3"){$""}
+                    }
                 }
             }
+
+            // div(style="width:auto; min-width:100%; max-height:60vh; display:flex;")
+            "edit-table"(id="#<table_id>" data="#<to.json(Movimientos)>" style="width:100%;"
+            "control-styles"="
+                tr th{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -o-text-overflow:ellipsis; }
+                tr td { font-size:.8rem; }
+                th { font-size:.9rem; outline:none !important; font-weight:500 !important; }
+                #__table_input { font-size:unset !important; }
+            "
+            )
+            {
+                "edit-thead"
+                {
+                    "edit-tr"
+                    {
+                        "edit-th"(type="NoEditable" field="documento"){$"Documento"}
+                        "edit-th"(type="NoEditable" field="referencia"){$"Referencia"}
+                        "edit-th"(type="NoEditable" field="creado" textalign="center"){$"Creado"}
+                        "edit-th"(type="NoEditable" field="aplicacion" textalign="center"){$"Aplicación"}
+                        "edit-th"(type="NoEditable" field="ingreso" textalign="end" format="true" decs="#<@DECIMAL_PRECISION>" prefix="$ " thousandssep="true"){$"Ingreso"}
+                        "edit-th"(type="NoEditable" field="egreso" textalign="end" format="true" decs="#<@DECIMAL_PRECISION>" prefix="$ " thousandssep="true"){$"Egreso"}
+                        "edit-th"(type="NoEditable" field="categoria"){$"Categoria"}
+                        "edit-th"(type="NoEditable" field="beneficiario"){$"Beneficiario"}
+                        "edit-th"(type="NoEditable" field="fconciliado" textalign="center"){$"Conciliado"}
+                        "edit-th"(type="NoEditable" field="fauditado" textalign="center"){$"Auditado"}
+                        "edit-th"(type="NoEditable" field="fcancelado" textalign="center"){$"Cancelado"}
+                        "edit-th"(type="NoEditable" field="fcontabilizado" textalign="center"){$"Contabilizado"}
+                        "edit-th"(type="NoEditable" field="fconfirmado" keyfield="confirmar" textalign="center"){$"Confirmado"}
+                        "edit-th"(type="NoEditable" field="btn_confirmado" textalign="center"){$""}
+                        "edit-th"(type="NoEditable" field="notas"){$"Notas"}
+                    }
+                }
+            }
+
+            div(class="show-on-print"){p(class="fixed-bottom text-center my-1"){$"#<@@(titles,'$footer')>"}}
         }
 
-        p{$"#<@('$error/message')>"}
+        // Resúmenes y datos al pie
+        section(id="bottom_area"){$""}
 
-        script
+        //////////////////////////////////////////////////////////////////
+        div(id="_custom_area")
         {
-            $'
-            mov.url_mov_cuenta="#<@_SERVICES_MOV_CUENTA>";
-            mov._entity_id=#<@("#parameters/_entity_id")>;
-            '
+            script(src="#<@JS_MOVCUENTA>"){""}
+            script(src="#<@JS_TABLE>"){""}
+            script(type="text/javascript")
+            {$'
+                function getCurrentContext() {
+                    const table = document.getElementById("#<table_id>");
+                    const id = (table?.DataArray[table.CurrentRowIndex()]?.sys_pk ?? "");
+                    return { item_id:id, context: {} }
+                }
+                
+                document.addEventListener("DOMContentLoaded", () => {
+                    mov.tableId = "#<table_id>";
+                    mov._entity_id=#<@("#parameters/_entity_id")>;
+                    mov.url_mov_cuenta="#<@_SERVICES_MOV_CUENTA>";
+                    mov.init();
+
+                    // Script injection
+                    #<@@(@crud_context,"script")>
+                });
+            '}
         }
     }
+    #!
+
+    do @context.end()
 }

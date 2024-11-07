@@ -227,6 +227,8 @@ module ":erp.efectivo.movimientos"
             do dbr.begin(db)
             start_transaction = @true
         }
+
+        if @@(data,"#cuenta_origen") == @@(data,"#cuenta_destino") { do rise_error(511,"Origen-Destino no pueden ser iguales.") }
         
         new retiro
         {

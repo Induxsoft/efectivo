@@ -2,5 +2,10 @@
 #!
 module "controller"
 {
-    
+    point @list to list
+    point @read to read
+    point @blank to blank
+    point @create to create
+    point @update to update
+    point @delete to delete
 }

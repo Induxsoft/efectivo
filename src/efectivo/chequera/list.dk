@@ -4,132 +4,158 @@ module "list.dk"
 {
     #include "functions.dkh"
     #include "serialize.dkh"
+    #include "uielements.v12.dkl"
     #include "../_lib/icons.dk"
     #include "../_lib/config.dk"
-    #include "uielements.v12.dkl"
 
     do @context.begin(@crud_context)
-    ref @http_context = @('&http')
-    ref get = @@(@http_context,"&request/get")
-    ref cCheques = ifnull(@('&.'),list.create())
+    
+    ref data = ifnull(@("&./data"),list.create())
+    ref titles = ifnull(@("&./titles"),record.create())
 
-    for i = 0; i < list.count(cCheques)
-    {
-        ref cheque = list.obj(cCheques,i)
-        link_nombre = replace(@MOV_MOVIMIENTOS,'@cuenta',@@(cheque,'$sys_pk'))
-        link_editar = "./" + str(@@(cheque,'sys_pk')) + "/"
-
-        cheque<"saldo">: format(@@(cheque,'#saldo'),'$ #,0.0000')
-        // cheque<"link_nombre">: ftext('<a href="#<link_nombre>" style="text-decoration: none;">#<@@(cheque,"$nombre")></a>')
-        cheque<"_actions">: ftext('
-            <div class="no-print" style="display:flex;justify-content:center;align-items: center; gap: 6px;">
-                <a href="#<link_nombre>" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Estado de cuenta</a>
-                <a href="#<link_editar>" style="cursor:pointer; text-decoration: none; padding: 0px 8px; background-color: #F5F5F5; color: #000;">Editar</a>
-                <button style="cursor:pointer; border: none; padding: 4px 8px; background-color: #F5F5F5; color: #000;" onclick="InduxsoftCrudlModel.Delete(#<@@(cheque,"sys_pk")>)">Eliminar</button>
-            </div>
-        ')
-    }
-
+    @_entities_type = @("$parameters/_entities_type")
+    table_id = "tbl_"+@_entities_type
+    decimals = @("#parameters/decimals")
+    
+    tbtn_style = "cursor:pointer; text-decoration:none; border:none; outline:none; padding: 0px 8px; background-color:#F5F5F5; color:#000000;"
     new table_definition
     {
-        @"datatable*": cCheques
-        @"leyend": "Mostrando las primeras # cuentas ordenadas por nombre"
+        @"datatable*": data
         member @"columns"
         {
             member @"nombre" { @"caption":"Nombre" }
             member @"banco" { @"caption":"Banco" }
             member @"numcuenta" { @"caption":"Número de cuenta" }
             member @"clabe" { @"caption":"Clabe" }
-            member @"saldo" { @"caption":"Saldo" }
-            member @"divisa" { @"caption":"Divisa" }
+            member @"saldo"
+            {
+                @"caption":"Saldo"
+                @"align":"end"
+                @"format":@true
+                @"thousandssep":@true
+                @"decs":decimals
+            }
+            member @"divisa"
+            {
+                @"caption":"Divisa"
+                @"align":"center"
+            }
             member @"notas" { @"caption":"Notas" }
-            member @"_actions" { @"caption":"Acciones" }
+            member @"_actions"
+            {
+                @"caption":"Acciones"
+                @"template":ftext('
+                    <div style="display:flex;gap:8px;justify-content:center;width:100%;" class="no-print">
+                        <a href="${\"#<@MOV_MOVIMIENTOS>\".replace(\"@cuenta\",DataRow.sys_pk)}" style="#<tbtn_style>">Estado de cuenta</a>
+                        <a href="./${DataRow.sys_pk}/" style="#<tbtn_style>">Editar</a>
+                        <button onclick="InduxsoftCrudlModel.Delete(${DataRow.sys_pk})" style="#<tbtn_style>">Eliminar</button>
+                    </div>')
+                @"no-print":@true
+            }
         }
+        @"table_footer": "Mostrando los primeros # registros"
     }
 
-    header_act::
-    { 
-        #$ 
-        a(href="#<@CHQ_AGREGAR>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Agregar"}
-        a(href="#<@EFC_BANCO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Bancos"}
-        a(href="#<@MOV_DEPOSITO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Realizar depósito"}
-        a(href="#<@MOV_RETIRO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Realizar retiro"}
-        a(href="#<@MOV_TRASPASO>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action no-print"){$"Realizar transferencia"}
+    function print_buttons()
+    {
+        btn_cls = "btn btn-sm border-secondary induxsoft-corners btn-main-action"
+        #$
+        a(class="#<btn_cls>" href="#<@EFC_BANCO>"){$"Bancos"}
+        #!
     }
-    #! point general_act to header_act
+    point @buttons to print_buttons
+    new nav_config
+    {
+        @"title": "Cuentas de efectivo"
+        @"urlexit": "/"
+        @"buttons*": @buttons
+        @"main": "GD11,GD14,GD15,GD16"
+        @"actions*": ifnull(@("&./itemactions"),list.create())
+        @"reports*": ifnull(@("&./itemreports"),list.create())
+        @"jscurrentcontext": "getCurrentContext"
+    }
     
     #$
-    #$ div(class="container-fluid p-0")
+    div(class="container-fluid" id="view")
     {
         link(href="#<@CSS_MAIN>" rel="stylesheet")
-
-        #! do uie.printMainBar(general_act, "Cuentas de cheque", @true, "")
-
-        #$ div(id="work_area" class="container-section mt-1 p-2 pt-0")
+        // Filtros y acciones
+        section(id="top_area")
         {
-            p{$"#<@('$error/message')>"}
+            #!
+            do uie.printV12FormBar(nav_config)
+            #$
             form(action="./" method="GET" id="form_filter" class="no-print mb-1")
             {
                 "filter-text"(
-                    "id"="micontrol10"
+                    "id"="fil_text"
                     "text-field"="s"
                     "placeholder"="Nombre, banco, número de cuenta o clabe"
                     "form"="#form_filter"
-                    "value"="#<@@(get,'$s')>"
+                    "value"="#<@('$parameters/s')>"
                     "auto-submit"="true"
                     "class"="w-100"
                 ){$""}
             }
-            #! do uie.dbeditable(table_definition,"table_cuentas_de_cheques")
         }
+        // Contenido principal
+        section(id="work_area")
+        {
+            div(class="show-on-print")
+            {
+                p(class="text-center my-0"){$"#<@@(titles,'$title')>"}
+                p(class="text-center my-0"){$"#<@@(titles,'$subtitle')>"}
+                p(class="text-center my-0"){$"#<@@(titles,'$subtitle_2')>"}
 
-        // div(class="table-responsive mt-2")
-        // {
-        //     table(class="table table-sm table-striped table-bordered")
-        //     {
-        //         thead
-        //         {
-        //             tr
-        //             {
-        //                 th{$"#"}
-        //                 th{$"Nombre"}
-        //                 th{$"Banco"}
-        //                 th{$"Número de cuenta"}
-        //                 th{$"Clabe"}
-        //                 th{$"Saldo"}
-        //                 th{$"Divisa"}
-        //                 th{$"Notas"}
-        //                 th{$"Acciones"}
-        //             }
-        //         }
-        //         tbody
-        //         {
-        //             #!
-        //             go foreach.lobj(index:i, value:cheque) with(cCheques)
-        //             {
-        //                 row = (i+1)
-        //                 #$
-        //                 tr
-        //                 {
-        //                     td{$"#<row>"}
-        //                     td{a(href="#<replace(@MOV_MOVIMIENTOS,'@cuenta',@@(cheque,'$sys_pk'))>"){$"#<@@(cheque,'$nombre')>"}}
-        //                     td{$"#<@@(cheque,'$banco')>"}
-        //                     td{$"#<@@(cheque,'$numcuenta')>"}
-        //                     td{$"#<@@(cheque,'$clabe')>"}
-        //                     td{$"#<format(@@(cheque,'#saldo'),'$ #,0.00')>"}
-        //                     td{$"#<@@(cheque,'$divisa')>"}
-        //                     td{$"#<@@(cheque,'$notas')>"}
-        //                     td
-        //                     {
-        //                         a(class="btn btn-primary btn-xs m-1" href="./#<@@(cheque,'sys_pk')>/"){"Editar"}
-        //                         button(class="btn btn-danger btn-xs m-1" onclick="InduxsoftCrudlModel.Delete(#<@@(cheque,'sys_pk')>)"){"Eliminar"}
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+                div(class="row")
+                {
+                    div(class="col-3 text-start")
+                    {
+                        small(class="d-block"){ $"#<cut(@('$http/session/user/name'),25)>" }
+                        small(class="d-block"){ $"#<date_str(now(),'dd/MMM/yyyy')>" }
+                    }
+                    div(class="col-6 text-center")
+                    {
+                        h4(class=""){$"Cuentas de efectivo"}
+                    }
+                    div(class="col-3 text-end")
+                    {
+                        small(class="d-block" id="lbl_filter_1"){$""}
+                        small(class="d-block" id="lbl_filter_2"){$""}
+                        small(class="d-block" id="lbl_filter_3"){$""}
+                    }
+                }
+            }
 
-        // p{$"#<@('$error/message')>"}
+            #!
+            do uie.dbeditable(table_definition,table_id)
+            #$
+
+            div(class="show-on-print"){p(class="fixed-bottom text-center my-1"){$"#<@@(titles,'$footer')>"}}
+        }
+        // Resúmenes y datos al pie
+        section(id="bottom_area"){$""}
+
+        //////////////////////////////////////////////////////////////////
+        div(id="_custom_area")
+        {
+            // script(src=""){$""}
+            script(type="text/javascript")
+            {$'
+                function getCurrentContext() {
+                    const table = document.getElementById("#<table_id>");
+                    const id = (table?.DataArray[table.CurrentRowIndex()]?.sys_pk ?? "");
+                    return { item_id:id, context: {} }
+                }
+                
+                document.addEventListener("DOMContentLoaded", () => {
+                    // Script injection
+                    #<@@(@crud_context,"script")>
+                });
+            '}
+        }
     }
+    #!
+
+    do @context.end()
 }

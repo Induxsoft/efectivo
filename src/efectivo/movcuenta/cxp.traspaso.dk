@@ -53,7 +53,7 @@ module "form.dk"
     }
     new def_doc_retiro
     {
-        @"datatable*": ifnull(@("&./documentos"),list.create())
+        @"datatable*": ifnull(@("&./docs_ret"),list.create())
         @"id": "sel_documento_retiro"
         new member "attributes"
         {
@@ -66,7 +66,7 @@ module "form.dk"
     }
     new def_doc_deposito
     {
-        @"datatable*": ifnull(@("&./documentos"),list.create())
+        @"datatable*": ifnull(@("&./docs_dep"),list.create())
         @"id": "sel_documento_deposito"
         new member "attributes"
         {
@@ -77,6 +77,12 @@ module "form.dk"
         @"text_field": "const"
         @"selected": form("documento_deposito","nm",@null)
     }
+
+    @url_exit = @EFC_CHEQUERA
+    if @("#parameters/icuenta") > 0 {
+        @url_exit = replace(@MOV_MOVIMIENTOS,"@cuenta",@("#parameters/icuenta"))
+        def_cta_origen<"selected"> : @("#parameters/icuenta")
+    }
     
     #$
     div(class="container")
@@ -86,9 +92,9 @@ module "form.dk"
             div(class="col-4 d-flex align-items-center p-0") { h5(class="tex-no-break m-0"){$"Trasferencia"} }
             div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
             {
-                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
                 button(type="button" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_save"){$"#<@ICON_SAVE> Guardar"}
-                a(href="#<@EFC_CHEQUERA>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_X_LG>"}
+                button(type="button" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" onclick="window.location.reload();" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
+                a(href="#<@url_exit>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_X_LG>"}
             }
         }
 
@@ -102,14 +108,14 @@ module "form.dk"
                 {
                     div(class="col-12 col-sm-6")
                     {
-                        small(class="form-label" "for"="sel_cuenta_origen"){$"Cuenta origen:"}
+                        small(class="form-label fw-bold" "for"="sel_cuenta_origen"){$"Cuenta origen:"}
                         ##
                         do uie.dbSelect(def_cta_origen)
                         ##
                     }
                     div(class="col-12 col-sm-6")
                     {
-                        small(class="form-label" "for"="sel_cuenta_destino"){$"Cuenta destino:"}
+                        small(class="form-label fw-bold" "for"="sel_cuenta_destino"){$"Cuenta destino:"}
                         ##
                         do uie.dbSelect(def_cta_destino)
                         ##       
@@ -190,8 +196,30 @@ module "form.dk"
             script(type="text/javascript")
             {$'
                 document.addEventListener("DOMContentLoaded", () => {
-                    let formTraspaso = document.getElementById("form_traspaso");
-                    let btnSave = document.getElementById("btn_save");
+                    const formTraspaso = document.getElementById("form_traspaso");
+                    const btnSave = document.getElementById("btn_save");
+                    const cta_origen = document.getElementById("sel_cuenta_origen");
+                    const cta_destino = document.getElementById("sel_cuenta_destino");
+
+                    let origen = cta_origen.value;
+                    let destino = cta_destino.value;
+
+                    cta_origen.addEventListener("change", (e) => {
+                        if (cta_origen.value == cta_destino.value) {
+                            alert("La cuenta origen seleccionada no puede ser igual a la cuenta destino.");
+                            cta_origen.value = origen;
+                            return;
+                        }
+                        origen = e.target.value;
+                    });
+                    cta_destino.addEventListener("change", (e) => {
+                        if (cta_origen.value == cta_destino.value) {
+                            alert("La cuenta destino seleccionada no puede ser igual a la cuenta origen.");
+                            cta_destino.value = destino;
+                            return;
+                        }
+                        destino = e.target.value;
+                    });
 
                     btnSave.addEventListener("click", () => {
                         if (!formTraspaso.reportValidity()) return;

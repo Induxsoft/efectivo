@@ -16,12 +16,12 @@ module "lib.dk"
             }
             @"value_field": "id"
             @"text_field": "const"
-            @"selected": @("$input/documento")
+            @"selected": form("documento","nm",@("&parameters"))
         }
 
         do uie.dbSelect(params)
 
-        exception {/*ignore*/}
+        exception{ do pop_exception() }
     }
 
     listarCuentas::
@@ -38,12 +38,12 @@ module "lib.dk"
             }
             @"value_field": "sys_pk"
             @"text_field": "nombre"
-            @"selected": @("$input/icuenta")
+            @"selected": form("icuenta","nm",@("&parameters"))
         }
 
         do uie.dbSelect(params)
 
-        exception {/*ignore*/}
+        exception{ do pop_exception() }
     }
 
     listarCategorias::
@@ -60,12 +60,12 @@ module "lib.dk"
             }
             @"value_field": "sys_pk"
             @"text_field": "descripcion"
-            @"selected": @("$input/icategoria")
+            @"selected": form("icategoria","nm",@("&parameters"))
         }
 
         do uie.dbSelect(params)
 
-        exception {/*ignore*/}
+        exception{ do pop_exception() }
     }
 
     listarBancos::
@@ -81,12 +81,12 @@ module "lib.dk"
             }
             @"value_field": "sys_pk"
             @"text_field": "nombre"
-            @"selected": @("$input/ibanco")
+            @"selected": form("ibanco","nm",@("&parameters"))
         }
 
         do uie.dbSelect(params)
 
-        exception {/*ignore*/}
+        exception{ do pop_exception() }
     }
 
     listarDivisas::
@@ -102,11 +102,11 @@ module "lib.dk"
             }
             @"value_field": "sys_pk"
             @"text_field": "codigo"
-            @"selected": @("$input/idivisa")
+            @"selected": form("idivisa","nm",@("&parameters"))
         }
 
         do uie.dbSelect(params)
 
-        exception {/*ignore*/}
+        exception{ do pop_exception() }
     }
 }

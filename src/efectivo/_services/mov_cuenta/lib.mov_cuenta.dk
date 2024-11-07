@@ -74,6 +74,8 @@ module ":mov"
         do dbr.commit(db)
         do dbr.apps.action.ext(result)
 
+        return result
+
         exception
         {
             do errordet(@false)
@@ -101,6 +103,8 @@ module ":mov"
         do dbr.apps.action.pos(result)
         do dbr.commit(db)
         do dbr.apps.action.ext(result)
+
+        return result
 
         exception
         {

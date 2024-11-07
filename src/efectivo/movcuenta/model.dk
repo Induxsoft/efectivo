@@ -3,6 +3,7 @@
 module "model"
 {
     @table_name = "movcuenta"
+    @mov_fdr_field = "mov.aplicacion"
 
     mov.prepareView::&db,&params,&data
     {
@@ -42,8 +43,10 @@ module "model"
                 data<"cuentas*"> : dbr.list(db,sql,@null)
                 sql = "SELECT sys_pk,descripcion FROM categoria WHERE tipo = 30 AND NOT IFNULL(sys_deleted,0) ORDER BY sys_pk;"
                 data<"categorias*"> : dbr.list(db,sql,@null)
-                sql = "SELECT doc.id,doc.const FROM cdocumentos doc INNER JOIN cfg_chq_docs cfg ON cfg.documento = doc.id WHERE IFNULL(cfg.traspasos,0) ORDER BY doc.id;"
-                data<"documentos*"> : dbr.list(db,sql,@null)
+                sql = "SELECT doc.id,doc.const FROM cdocumentos doc INNER JOIN cfg_chq_docs cfg ON cfg.documento = doc.id WHERE IFNULL(cfg.depositos,0) ORDER BY doc.id;"
+                data<"docs_dep*"> : dbr.list(db,sql,@null)
+                sql = "SELECT doc.id,doc.const FROM cdocumentos doc INNER JOIN cfg_chq_docs cfg ON cfg.documento = doc.id WHERE IFNULL(cfg.retiros,0) ORDER BY doc.id;"
+                data<"docs_ret*"> : dbr.list(db,sql,@null)
                 break
             }
         }
@@ -100,30 +103,50 @@ module "model"
 
         data<"saldos*"> : saldos
     }
-    @filter_range_fecha="AND IF(IFNULL(@year,'')='', true, YEAR(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=@year)
-            AND IF(IFNULL(@month,'')='', true, (YEAR(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=IFNULL(@year,YEAR(NOW())) AND MONTH(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion))=@month))
-            AND IF(IFNULL(@range,'-99')='-99', true, (DATE(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion)) BETWEEN DATE_ADD(NOW(), INTERVAL - @range DAY) AND NOW()))
-            AND IF(IFNULL(@datefrom,'')='', true, (DATE(IF(IFNULL(@tdate,'0')='0',mov.sys_dtcreated,mov.aplicacion)) BETWEEN DATE(@datefrom) AND DATE(@dateto)))
-            AND IF(IFNULL(@fd,'')='', true, DATE(mov.aplicacion) BETWEEN @fd AND LAST_DAY(@fd))"
 
-    @filter_by_status="AND if(ifnull(@auditado,'*')='*',true,IFNULL(mov.auditado,0)=@auditado)
-        AND if(ifnull(@conciliado,'*')='*',true,IFNULL(mov.conciliado,0)=@conciliado)
-        AND if(ifnull(@contabilizado,'*')='*',true,IFNULL(mov.contabilizado,0)=@contabilizado)
-        AND if(ifnull(@confirmado,'*')='*',true,ifnull(mov.confirmado,0)=@confirmado)
-        AND if(ifnull(@cancelado,'*')='*',true,ifnull(mov.cancelado,0)=@cancelado)"
-        
+    @filter_range_fecha = " AND (
+    CASE @fdr_mode
+        WHEN 'month' THEN (YEAR(#<@mov_fdr_field>) = @fdr_year AND MONTH(#<@mov_fdr_field>) = @fdr_month)
+        WHEN 'lastdays' THEN (DATE(#<@mov_fdr_field>) BETWEEN ADDDATE(DATE(NOW()), INTERVAL -@fdr_range DAY) AND DATE(NOW()))
+        WHEN 'range' THEN (
+            CASE
+                WHEN @fdr_from != '' && @fdr_to != '' THEN (DATE(#<@mov_fdr_field>) BETWEEN @fdr_from AND @fdr_to)
+                WHEN @fdr_from != '' && @fdr_to = '' THEN (DATE(#<@mov_fdr_field>) >= @fdr_from)
+                WHEN @fdr_from = '' && @fdr_to != '' THEN (DATE(#<@mov_fdr_field>) <= @fdr_to)
+                ELSE TRUE
+            END
+        )
+        ELSE TRUE
+    END
+    )"
+
+    @filter_by_status = "
+    AND if(ifnull(@auditado,'*')='*',true,IFNULL(mov.auditado,0)=@auditado)
+    AND if(ifnull(@conciliado,'*')='*',true,IFNULL(mov.conciliado,0)=@conciliado)
+    AND if(ifnull(@contabilizado,'*')='*',true,IFNULL(mov.contabilizado,0)=@contabilizado)
+    AND if(ifnull(@confirmado,'*')='*',true,ifnull(mov.confirmado,0)=@confirmado)
+    AND if(ifnull(@cancelado,'*')='*',true,ifnull(mov.cancelado,0)=@cancelado)
+    "
+    
     mov.obtenerMovimientosCuenta::&db,&params
     {
         if not(field.exist(params,"decimals")){ params<"decimals"> : parse.num(dbr.vars.get(db,"FXCA001")) }
-        // if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ESTADO_CUENTA_BANCARIA)) { do rise_error(0,"No autorizado")}
+        // Establecer filtros predeterminados
+        if not(field.exist(params,"cancelado")) { params<"cancelado"> : 0 }
+        if not(field.exist(params,"fdr_field")) { params<"fdr_field"> : 2 }
+        // fdr_init
+        if not(field.exist(params,"fdr_mode")) { params<"fdr_mode"> : "month" }
+        // [month]
+        if not(field.exist(params,"fdr_year")) { params<"fdr_year"> : @curr_year }
+        if not(field.exist(params,"fdr_month")) { params<"fdr_month"> : @curr_month }
+        // [lastdays]
+        if not(field.exist(params,"fdr_range")) { params<"fdr_range"> : 30 }
+        // [range]
+        if not(field.exist(params,"fdr_from")) { params<"fdr_from"> : "" }
+        if not(field.exist(params,"fdr_to")) { params<"fdr_to"> : "" }
 
-        sql = "SELECT sys_pk,sys_guid,nombre FROM chequera WHERE sys_pk = @_entity_id;"
-        ref cuenta = dbr.rec(db,sql,params)
-
-        params<"year">: ifstr(trim(@@(params,"year"))!="", @@(params,"year"), str(ndatetime.year(ndatetime.now())))
-        params<"month">: ifstr(trim(@@(params,"month"))!="", @@(params,"month"), str(ndatetime.month(ndatetime.now())))
-
-        ref saldos = mov.obtenerSaldos(db,params,@null)
+        @mov_fdr_field = ifstr(@@(params,"#fdr_field")==1, "mov.sys_dtcreated", "mov.aplicacion")
+        @filter_range_fecha = ftext(@filter_range_fecha)
 
         sql = "
         SELECT
@@ -149,11 +172,11 @@ module "model"
             DATE_FORMAT(mov.fecha,'%Y-%m-%d') AS creado,
             mov.notas,
             mov.icuenta,
-            if(IFNULL(mov.auditado,0),'Sí','No')fauditado,
-            if(IFNULL(mov.conciliado,0),'Sí','No')fconciliado,
-            if(IFNULL(mov.contabilizado,0),'Sí','No')fcontabilizado,
-            if(IFNULL(mov.cancelado,0),'Sí','No')fcancelado,
-            if(ifnull(mov.confirmado,0),'Sí','No')fconfirmado,
+            if(IFNULL(mov.auditado,0),'Sí','No') fauditado,
+            if(IFNULL(mov.conciliado,0),'Sí','No') fconciliado,
+            if(IFNULL(mov.contabilizado,0),'Sí','No') fcontabilizado,
+            if(IFNULL(mov.cancelado,0),'Sí','No') fcancelado,
+            if(ifnull(mov.confirmado,0),'Sí','No') fconfirmado,
             mc.notas notas_mc,
             mc.api_confirmacion,mc.api_referencia,mc.api_url
         FROM movcuenta AS mov
@@ -166,13 +189,12 @@ module "model"
             #<@filter_range_fecha>
         ORDER BY mov.aplicacion, mov.ingreso DESC, mov.egreso DESC
         "
-        ref movimientos = dbr.list(db,ftext(sql),params)
 
         new data
         {
-            @"cuenta*": cuenta
-            @"saldos*": saldos
-            @"movimientos*": movimientos
+            @"cuenta*": dbr.rec(db,"SELECT sys_pk,sys_guid,nombre FROM chequera WHERE sys_pk = @_entity_id;",params)
+            @"saldos*": mov.obtenerSaldos(db,params,@null)
+            @"movimientos*": dbr.list(db,ftext(sql),params)
         }
 
         return data
@@ -180,7 +202,6 @@ module "model"
 
     mov.deposito::&db,&params,&data
     {
-        //if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_DEPOSITO)) { do rise_error(0,"No autorizado")}
         @use_transaction = @false
 
         do dbr.apps.action.pre("GD14")
@@ -214,7 +235,6 @@ module "model"
 
     mov.retiro::&db,&params,&data
     {
-        //if not(@@(params,"#auth_transferencia")){if not(dbr.security.isauth(db,@CXP_SEC_PRIVID_ADD_RETIRO)) { do rise_error(0,"No autorizado")}}
         @use_transaction = @false
 
         do dbr.apps.action.pre("GD15")
@@ -248,9 +268,6 @@ module "model"
 
     mov.traspaso::&db,&params,&data
     {
-        //params<"auth_transferencia">:dbr.security.isauth(db,@CXP_SEC_PRIVID_REALIZAR_TRANSFERENCIA)
-        //if not(@@(params,"#auth_transferencia")) { do rise_error(0,"No autorizado")}
-
         @use_transaction = @false
 
         do dbr.apps.action.pre("GD16")

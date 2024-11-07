@@ -11,6 +11,9 @@ module "form.dk"
     #include "./html.selects.dk"
 
     do @context.begin(@crud_context)
+
+    @url_exit = @EFC_CHEQUERA
+    if @("#parameters/icuenta") > 0 { @url_exit = replace(@MOV_MOVIMIENTOS,"@cuenta",@("#parameters/icuenta")) }
     
     #$
     div(class="container")
@@ -20,9 +23,9 @@ module "form.dk"
             div(class="col-4 d-flex align-items-center p-0") { h5(class="tex-no-break m-0"){$"Depósito"} }
             div(class="col-8 d-flex justify-content-end align-items-center p-0 gap-2")
             {
-                a(href="./" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
                 button(type="button" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_save"){$"#<@ICON_SAVE> Guardar"}
-                a(href="#<@EFC_CHEQUERA>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_X_LG>"}
+                button(type="button" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" onclick="window.location.reload();" title="Refrescar"){$"#<@ICON_ARROW_CLOCKWISE>"}
+                a(href="#<@url_exit>" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" title="Salir"){$"#<@ICON_X_LG>"}
             }
         }
 

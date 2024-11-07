@@ -13,6 +13,7 @@ GD13,Eliminar cuenta de cheque,efectivo.cuentas
 GD14,Depósito,efectivo.cuentas
 GD15,Retiro,efectivo.cuentas
 GD16,Traspaso,efectivo.cuentas
+GD17,Estado de cuenta,efectivo.cuentas
 GD20,Confirmar movimiento,efectivo.cuentas
 GD21,Conciliar movimiento,efectivo.cuentas
 GD22,Auditar movimiento,efectivo.cuentas

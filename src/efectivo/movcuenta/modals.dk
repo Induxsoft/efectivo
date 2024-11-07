@@ -29,27 +29,24 @@ module ""
                     {
                         div(class="tab-pane fade active show" id="nav-principal" role="tabpanel" "aria-labelledby"="nav-principal-tab")
                         {
-                            label{"Fecha de aplicación:"}
+                            label("for"="fecha_aplicacion"){"Fecha de aplicación:"}
                             input(type="date" class="induxsoft-form-control" id="fecha_aplicacion" name="fecha_aplicacion")
-                            div(class="d-flex")
-                            {
+                            
+                            div(class="d-flex") {
                                 label{input(type="checkbox" id="check_confirmar" name="check_confirmar" )" Confirmado"}
                             }
-                            label{"Notas:"}
+                            div(class="d-flex") {
+                                label{input(type="checkbox" id="check_conciliar" name="check_conciliar" )" Conciliado"}
+                            }
+                            div(class="d-flex") {
+                                label{input(type="checkbox" id="check_auditar" name="check_auditar" )" Auditado"}
+                            }
+
+                            label("for"="notas"){"Notas:"}
                             textarea(class="induxsoft-form-control mb-2" id="notas"){""}
 
                             input(type="file" class="induxsoft-form-control" id="adjuntos" name="adjuntos" style="display:none !important;")
                             label("for"="adjuntos" class="btn btn-sm border-secondary induxsoft-corners btn-main-action" id="btn_adjuntos"){"Adjuntos"}
-
-                            div(class="d-flex")
-                            {
-                                label{input(type="checkbox" id="check_conciliar" name="check_conciliar" )" Conciliado"}
-                            }
-
-                            div(class="d-flex")
-                            {
-                                label{input(type="checkbox" id="check_auditar" name="check_auditar" )" Auditado"}
-                            }
                         }
                         div(class="tab-pane" id="nav-adjuntos" role="tabpanel" "aria-labelledby"="nav-adjuntos-tab")
                         {
@@ -73,10 +70,8 @@ module ""
                                     "label-prop"="name"
                                 ){""}
                             }
-                           
                         }
                     }
-                    
                 }
                 div(class="modal-footer" id="mdl-footer-entity_")
                 {
