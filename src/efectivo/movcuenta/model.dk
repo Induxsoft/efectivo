@@ -5,6 +5,20 @@ module "model"
     @table_name = "movcuenta"
     @mov_fdr_field = "mov.aplicacion"
 
+    function setPrintTitles(&db,&data)
+    {
+        using data
+        {
+            member @"titles"
+            {
+                @"title": dbr.vars.getd(db,"FXCA108","")
+                @"subtitle": dbr.vars.getd(db,"FXCA109","")
+                @"subtitle_2": dbr.vars.getd(db,"FXCA110","")
+                @"footer": dbr.vars.getd(db,"FXCA111","")
+            }
+        }
+    }
+
     mov.prepareView::&db,&params,&data
     {
         if not(field.exist(params,"decimals")){ params<"decimals"> : parse.num(dbr.vars.get(db,"FXCA001")) }
@@ -157,19 +171,19 @@ module "model"
             mov.sys_guid AS `mov`,
             doc.const AS documento,
             mov.referencia,
+            DATE_FORMAT(mov.fecha,'%Y-%m-%d') AS creado,
             DATE_FORMAT(mov.aplicacion,'%Y-%m-%d') AS aplicacion,
             mov.ingreso,
             mov.egreso,
             cat.descripcion AS categoria,
             IFNULL(mov.beneficiario,'') AS beneficiario,
-            IFNULL(mov.auditado,0) AS auditado,
-            IFNULL(mov.conciliado,0) AS conciliado,
-            IFNULL(mov.contabilizado,0) AS contabilizado,
-            IFNULL(mov.cancelado,0) AS cancelado,
-            IFNULL(mov.partida,'') AS partida,
-            IFNULL(poliza,'') AS poliza,
-            ifnull(mov.confirmado,0)confirmado,
-            DATE_FORMAT(mov.fecha,'%Y-%m-%d') AS creado,
+            IFNULL(mov.auditado,0) auditado,
+            IFNULL(mov.conciliado,0) conciliado,
+            IFNULL(mov.contabilizado,0) contabilizado,
+            IFNULL(mov.cancelado,0) cancelado,
+            ifnull(mov.confirmado,0) confirmado,
+            IFNULL(mov.partida,'') partida,
+            IFNULL(poliza,'') poliza,
             mov.notas,
             mov.icuenta,
             if(IFNULL(mov.auditado,0),'Sí','No') fauditado,
@@ -178,7 +192,9 @@ module "model"
             if(IFNULL(mov.cancelado,0),'Sí','No') fcancelado,
             if(ifnull(mov.confirmado,0),'Sí','No') fconfirmado,
             mc.notas notas_mc,
-            mc.api_confirmacion,mc.api_referencia,mc.api_url
+            mc.api_confirmacion,
+            mc.api_referencia,
+            mc.api_url
         FROM movcuenta AS mov
             INNER JOIN chequera AS cta ON mov.icuenta = cta.sys_pk
             INNER JOIN cdocumentos AS doc ON doc.id = mov.tipo
@@ -187,7 +203,7 @@ module "model"
         WHERE mov.icuenta = @_entity_id
             #<@filter_by_status>
             #<@filter_range_fecha>
-        ORDER BY mov.aplicacion, mov.ingreso DESC, mov.egreso DESC
+        ORDER BY #<@mov_fdr_field>, mov.referencia
         "
 
         new data
@@ -196,6 +212,7 @@ module "model"
             @"saldos*": mov.obtenerSaldos(db,params,@null)
             @"movimientos*": dbr.list(db,ftext(sql),params)
         }
+        do setPrintTitles(db,data)
 
         return data
     }

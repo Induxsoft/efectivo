@@ -62,15 +62,17 @@ module "list.dk"
 
     for i = 0; i < @count(Movimientos)
     {
-        ref mov=@item(Movimientos,i)
-        mov<"_index_">:i
+        ref mov = @item(Movimientos,i)
+        mov<"_index_"> : i
+        
         if not(@@(mov,"#cancelado"))
         {
-            jsonmov=to.json(mov)
-            mov<"btn_confirmado">: "<button data='"+jsonmov+"' style='cursor:pointer;' onclick='mov.MovCuentaModal(null,event)'>Confirmación</button>"
-            mov<"fconciliado">:"<input type='checkbox' id='check_conciliado' data='"+jsonmov+"' "+ifstr(@@(mov,"#conciliado"),"checked","")+"='true'  onchange='mov.changeCheck(null,0,event)'>"
-            mov<"fauditado">:"<input type='checkbox' id='check_auditado' data='"+jsonmov+"' "+ifstr(@@(mov,"#auditado"),"checked","")+"='true'  onchange='mov.changeCheck(null,1,event)'>"
-            mov<"fcancelado">:"<button data='"+jsonmov+"' style='cursor:pointer;' onclick='mov.changeCheck(null,99,event)'>Cancelar</button>"
+            // jsonmov=to.json(mov)
+
+            mov<"btn_confirmado">:"<button style='cursor:pointer;' onclick='mov.MovCuentaModal("+str(i)+")'>Confirmación</button>"
+            mov<"fconciliado">:"<input type='checkbox' id='check_conciliado_"+str(i)+"' "+ifstr(@@(mov,"#conciliado"),"checked","")+"='' onchange='mov.changeCheck("+str(i)+",0,this)'>"
+            mov<"fauditado">:"<input type='checkbox' id='check_auditado_"+str(i)+"' "+ifstr(@@(mov,"#auditado"),"checked","")+"='' onchange='mov.changeCheck("+str(i)+",1,this)'>"
+            mov<"fcancelado">:"<button style='cursor:pointer;' onclick='mov.changeCheck("+str(i)+",99,null)'>Cancelar</button>"
         }
     }
 
@@ -256,6 +258,7 @@ module "list.dk"
                 {
                     "edit-tr"
                     {
+                        "edit-th"(type="NoEditable" field="btn_confirmado" textalign="center"){$""}
                         "edit-th"(type="NoEditable" field="documento"){$"Documento"}
                         "edit-th"(type="NoEditable" field="referencia"){$"Referencia"}
                         "edit-th"(type="NoEditable" field="creado" textalign="center"){$"Creado"}
@@ -269,7 +272,6 @@ module "list.dk"
                         "edit-th"(type="NoEditable" field="fcancelado" textalign="center"){$"Cancelado"}
                         "edit-th"(type="NoEditable" field="fcontabilizado" textalign="center"){$"Contabilizado"}
                         "edit-th"(type="NoEditable" field="fconfirmado" keyfield="confirmar" textalign="center"){$"Confirmado"}
-                        "edit-th"(type="NoEditable" field="btn_confirmado" textalign="center"){$""}
                         "edit-th"(type="NoEditable" field="notas"){$"Notas"}
                     }
                 }
@@ -285,7 +287,7 @@ module "list.dk"
         div(id="_custom_area")
         {
             script(src="#<@JS_MOVCUENTA>"){""}
-            script(src="#<@JS_TABLE>"){""}
+            // script(src="#<@JS_TABLE>"){""}
             script(type="text/javascript")
             {$'
                 function getCurrentContext() {

@@ -35,19 +35,19 @@ var mov=
             var data=mov.DataRowSelected();
             if(!data)return;
             
-            data["aplicacion"]=this.fecha_aplicacion.value;
-            data["confirmado"]=this.check_confirmar.checked;
-            data["conciliado"]=this.check_conciliar.checked;
-            data["auditado"]=this.check_auditar.checked;
-            data["notas"]=this.notas?.value??"";
+            data["aplicacion"] = this.fecha_aplicacion.value;
+            data["confirmado"] = this.check_confirmar.checked;
+            data["conciliado"] = this.check_conciliar.checked;
+            data["auditado"] = this.check_auditar.checked;
+            data["fconfirmado"] = (this.check_confirmar.checked) ? "Sí" : "No";
+            data["notas"] = this.notas?.value??"";
             
             mov.service(mov.url_mov_cuenta,data,"confirmar",
             (result)=>
             {
                 data.sys_recver = result.sys_recver_mov + 1;
                 data.notas_mc = result.notas??"";
-                mov.UpdateRow(data,mov.table_cuentas.CurrentRowIndex());
-
+                
                 mov.changeValueData(data);
                 mov.hideModal("modal_entity_mov_cuenta");
                 // window.location.reload();
@@ -146,18 +146,27 @@ var mov=
     },
     changeValueData(row)
     {
-        var fields=mov.table_cuentas?._getCurrentRow()?.querySelectorAll("input,button")??null;
-        if(!fields)return;
+        let index = row._index_;
+        let tr = mov.table_cuentas.GetTrByIndex(index);
+        let fields = tr.querySelectorAll('input[type="checkbox"]');
         
         for (let i = 0; i < fields.length; i++) 
         {
             var elm = fields[i];
             if(elm)
             {
-                elm.removeAttribute("data");
-                elm.setAttribute("data",JSON.stringify(row));
+                if (elm.id === "check_conciliado_"+index) {
+                    (row.conciliado) ? elm.setAttribute("checked",true) : elm.removeAttribute("checked");
+                    row["fconciliado"] = elm.outerHTML;
+                }
+                if (elm.id === "check_auditado_"+index) {
+                    (row.auditado) ? elm.setAttribute("checked",true) : elm.removeAttribute("checked");
+                    row["fauditado"] = elm.outerHTML;
+                }
             }
         }
+
+        mov.UpdateRow(row,index);
     },
     CancelRow(data=null)
     {
@@ -202,46 +211,45 @@ var mov=
         }
         return filter;
     },
-    changeCheck(data,act,event=null)
+    changeCheck(irow,act,checkbox)
     {
-        var target=event.target??null;
-        if(!data && target)data=JSON.parse(target.getAttribute("data"));
+        let data = this.table_cuentas.DataArray[irow];
+        let active = (checkbox) ? checkbox.checked : false;
         
-        var fact="conciliar";
+        let fact = "";
         switch (act)
         {
-            case 1:
-                fact="auditar";
-                break;
-            case 99:
-                fact="cancelar"
+            case 0:
+                fact = "conciliar";
+                data["conciliado"] = active;
                 break
+            case 1:
+                fact = "auditar";
+                data["auditado"] = active;
+                break
+            case 99:
+                fact = "cancelar";
+                data["cancelado"] = true;
+                break
+            default:
+                console.warn("Acción no implementada");
+            break;
         }
-        if(event)
-        {
-            event.stopPropagation();
-            data["active"]=event.target.checked;
-        }
-        data["_entity_id"]=mov._entity_id??0;
-        if(act==99)data["params"]=mov.getFieldFormFilter();
+        
+        if (fact == "") return;
+        if (fact == "cancelar" && !confirm("¿Esta seguro que desea cancelar: "+data.referencia+"?")) return;
+
+        data["_entity_id"] = mov._entity_id??0;
+        data["active"] = active;
+        if(act==99) data["params"] = mov.getFieldFormFilter();
 
         mov.service(mov.url_mov_cuenta,data,fact,
-        (result)=>
-        {
+        (result) => {
             data.sys_recver = result.sys_recver + 1;
 
-            if(target && act!=99)
-            {
-                target.checked=data["active"]??false;
-                if(!target.checked)target.removeAttribute("checked");
-                else target.setAttribute("checked",true);
-
-                mov.changeValueData(data);
-            }
-            if(act==99)
-            {
+            if (act!=99) mov.changeValueData(data);
+            if (act==99) {
                 mov.CancelRow(data);
-                
                 mov.setValueSaldos(result)
             }
         });
@@ -339,10 +347,9 @@ var mov=
             else alert(error.message??error);
 	    },"POST",false);
     },
-    MovCuentaModal(row,event=null)
+    MovCuentaModal(irow)
     {
-        var target=event?.target??null;
-        if(!row && target)row=JSON.parse(target.getAttribute("data"));
+        let row = this.table_cuentas.DataArray[irow];
 
         if(this.fecha_aplicacion)this.fecha_aplicacion.value=row.aplicacion??"";
         if(this.check_confirmar)this.check_confirmar.checked=(row.confirmado??0)>0;
