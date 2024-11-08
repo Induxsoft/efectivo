@@ -18,8 +18,7 @@ program "instalador"
         "ctasasiva.csv",
         "divisa.csv",
         "tipoproveedor.csv",
-        "tipooperacion.csv",
-        "sys_app_item_type_finder.csv"
+        "tipooperacion.csv"
     ]')
 
     // Lista de privilegios iniciales (arreglo de id de privilegios)
