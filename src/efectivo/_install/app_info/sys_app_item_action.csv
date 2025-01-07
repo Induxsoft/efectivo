@@ -11,3 +11,7 @@
 "GD21","Conciliar movimiento","Conciliar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","0","action"
 "GD22","Auditar movimiento","Auditar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","0","action"
 "GD23","Cancelar movimiento","Cancelar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","0","action"
+"GD30","Bancos","Bancos","","/!/efectivo/bancos/","0","efectivo.banco","DET007","0","action"
+"GD31","Agregar bancos","Agregar banco","","/!/efectivo/bancos/_new/","0","efectivo.banco","DET007","0","action"
+"GD32","Editar bancos","Editar banco","","/!/efectivo/bancos/@_src_context_item_id/","0","efectivo.banco","DET007","1","action"
+"GD33","Eliminar bancos","Eliminar banco","","javascript:InduxsoftCrudlModel.Delete(@_src_context_item_id);","0","efectivo.banco","DET007","1","action"
