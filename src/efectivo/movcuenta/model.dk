@@ -74,7 +74,7 @@ module "model"
         if ejercicio <= 0 { ejercicio = val(hoy("yyyy")) }
         if periodo <= 0 || periodo > 12 { periodo = val(hoy("MM")) }
 
-        first_day = str(ejercicio) + "-" + str(periodo) + "-01"
+        first_day = str(ejercicio) + "-" + str(format(periodo,"00")) + "-01"
         
         params<"ejercicio"> : ejercicio
         params<"periodo"> : periodo
@@ -97,6 +97,10 @@ module "model"
             #<@filter_by_status>
             #<@filter_range_fecha>
         AND NOT IFNULL(cancelado,0);"
+
+        // do file.wtext("C:\\Users\\Dev\\Documents\\cande\\files\\sql_sinicial.txt",ftext(sql_sinicial))
+        // do file.wtext("C:\\Users\\Dev\\Documents\\cande\\files\\sql_i_e.txt",ftext(sql_i_e))
+        // do file.wtext("C:\\Users\\Dev\\Documents\\cande\\files\\sql_stotal.txt",ftext(sql_stotal))
 
         sInicial = dbr.num(db,ftext(sql_sinicial),params)
         ref IE = dbr.rec(db,ftext(sql_i_e),params)
@@ -124,9 +128,9 @@ module "model"
         WHEN 'lastdays' THEN (DATE(#<@mov_fdr_field>) BETWEEN ADDDATE(DATE(NOW()), INTERVAL -@fdr_range DAY) AND DATE(NOW()))
         WHEN 'range' THEN (
             CASE
-                WHEN @fdr_from != '' && @fdr_to != '' THEN (DATE(#<@mov_fdr_field>) BETWEEN @fdr_from AND @fdr_to)
-                WHEN @fdr_from != '' && @fdr_to = '' THEN (DATE(#<@mov_fdr_field>) >= @fdr_from)
-                WHEN @fdr_from = '' && @fdr_to != '' THEN (DATE(#<@mov_fdr_field>) <= @fdr_to)
+                WHEN @fdr_from != '' && @fdr_to != '' THEN (DATE(#<@mov_fdr_field>) BETWEEN DATE(@fdr_from) AND DATE(@fdr_to))
+                WHEN @fdr_from != '' && @fdr_to = '' THEN (DATE(#<@mov_fdr_field>) >= DATE(@fdr_from))
+                WHEN @fdr_from = '' && @fdr_to != '' THEN (DATE(#<@mov_fdr_field>) <= DATE(@fdr_to))
                 ELSE TRUE
             END
         )
