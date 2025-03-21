@@ -98,10 +98,6 @@ module "model"
             #<@filter_range_fecha>
         AND NOT IFNULL(cancelado,0);"
 
-        // do file.wtext("C:\\Users\\Dev\\Documents\\cande\\files\\sql_sinicial.txt",ftext(sql_sinicial))
-        // do file.wtext("C:\\Users\\Dev\\Documents\\cande\\files\\sql_i_e.txt",ftext(sql_i_e))
-        // do file.wtext("C:\\Users\\Dev\\Documents\\cande\\files\\sql_stotal.txt",ftext(sql_stotal))
-
         sInicial = dbr.num(db,ftext(sql_sinicial),params)
         ref IE = dbr.rec(db,ftext(sql_i_e),params)
         sTotal = dbr.num(db,ftext(sql_stotal),params)
