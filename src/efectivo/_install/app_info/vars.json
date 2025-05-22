@@ -1,0 +1,43 @@
+[
+    {
+        "id": "efectivo",
+        "caption": "Efectivo",
+        "help": "Variables del paquete: efectivo",
+        "vars": [
+            {
+                "varname": "efectivo.categoria.movin",
+                "vardefault": "",
+                "varvalue": "GDC01",
+                "varcaption": "Categorías de movimiento inicial",
+                "varhelp": "Categorías de efectivo",
+                "vartype": "string",
+                "varinput": {
+                    "control": "select",
+                    "source":{
+                        "type":"query",
+                        "query":"select sys_pk, codigo, concat(codigo,' - ',descripcion) descripcion from categoria where tipo=1 and not ifnull(sys_deleted,0) order by codigo",
+                        "keyfield":"codigo",
+                        "showfield":"descripcion"
+                    }
+                }
+            },
+            {
+                "varname": "efectivo.documento.movin",
+                "vardefault": "",
+                "varvalue": "65",
+                "varcaption": "Documento de movimiento inicial",
+                "varhelp": "Documentos de efectivo",
+                "vartype": "string",
+                "varinput": {
+                    "control": "select",
+                    "source":{
+                        "type":"query",
+                        "query":"select d.id, d.const from cdocumentos d inner join cfg_chq_docs c on d.id = c.documento where ifnull(c.depositos,0) order by d.id",
+                        "keyfield":"id",
+                        "showfield":"const"
+                    }
+                }
+            }
+        ]
+    }
+]

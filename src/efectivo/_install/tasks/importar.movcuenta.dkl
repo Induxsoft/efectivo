@@ -1,0 +1,237 @@
+#include "dkli.dkh"
+#!
+program "Importar movimientos iniciales de efectivo"
+{
+    #include "functions.dkh"
+    #include "serialize.dkh"
+    #include "dbr.dkh"
+    #include "dbr.apps.dkl"
+    #include "dbr.security.dkl"
+    #include "batch.v12.dkl"
+    #include "efectivo/movimientos.dkh"
+
+    do @context.begin(@batch_context)
+    
+    module "Constantes"
+    {
+        //#region >CONSTANTES
+        do errordet(@false)
+        @qname = @("$qname")
+        @token = @("$job/token")
+        @sys_fields = "sys_pk,sys_guid,sys_dtcreated,sys_timestamp,sys_dtexported,sys_info,sys_user,sys_lastuser,sys_exported,sys_deleted,sys_lock,sys_recver"
+        // cdocumentos (documentos de cuentas de efectivo)
+        @cDeposito = 65
+        @cCheque = 66
+        @cRetiro = 67
+        @cSPEI = 68
+        @cTransferenciaInterbancaria = 69
+    }
+    module "Funciones"
+    {
+        //#region >FUNCIONES
+        ref lib_csv = _import_library("devkron.serialize.csv.dll")
+        do _map_function(lib_csv,"devkron.serialize.csv.csvHelper","CsvRead","csv.read","System.String,System.String","*")
+        do _map_function(lib_csv,"devkron.serialize.csv.csvHelper","CsvWrite","csv.write","System.String,*System.Object","void")
+
+        function between(value,min,max)
+        {
+            return value >= min && value <= max
+        }
+
+        function date_format(dtm,fmt)
+        {
+            if dtm == "" { return "" }
+            if fmt == "" { fmt = "yyyy-MM-dd HH:mm:ss" }
+
+            fecha = date_str(str2dt(dtm),fmt)
+            return fecha
+
+            exception
+            {
+                do pop_exception()
+                return ""
+            }
+        }
+
+        function UpdatePercent(value)
+        {
+            new params
+            {
+                @"token":@("$job/token")
+            }
+            new data
+            {
+                @"percentage":value
+                @"progress_type":2
+            }
+            do dbr.update(batch.openDB(),"job",data,"sys_guid=@token",params)
+        }
+
+        function GetDocumento(&db,const)
+        {
+            const >> params
+            id = dbr.num(db,"SELECT d.id FROM cdocumentos d INNER JOIN cfg_chq_docs c ON d.id = c.documento WHERE (d.id = @const OR d.const = @const) AND COALESCE(c.depositos,c.retiros,c.traspasos) IS NOT NULL",params)
+
+            exception
+            {
+                do pop_exception()
+                id = 0
+            }
+
+            return id
+        }
+
+        function GetCategoria(&db,const)
+        {
+            const >> params
+            id = dbr.num(db,"SELECT sys_pk FROM categoria WHERE (codigo = @const OR sys_guid = @const) AND tipo IN (1,2,30)",params)
+
+            exception
+            {
+                do pop_exception()
+                id = 0
+            }
+
+            return id
+        }
+
+        function GetCuenta(&db,const)
+        {
+            const >> params
+            id = dbr.num(db,"SELECT sys_pk FROM chequera WHERE (clabe = @const OR numcuenta = @const OR codcuenta = @const OR nombre = @const OR sys_guid = @const)",params)
+
+            exception
+            {
+                do pop_exception()
+                id = 0
+            }
+
+            return id
+        }
+
+        function Import(&db,&data)
+        {
+            length = list.count(data)
+            if length < 1 {
+                do batch.saveLog(@token,"Nada para importar.")
+                do UpdatePercent(100)
+                return
+            }
+
+            do batch.saveLog(@token,"> Importando movimientos...")
+            progress = (100 / length)
+            affected_rows = 0
+            percent = 0
+
+            for i = 0; i < length
+            {
+                ref item = record.caseinsensitive(list.obj(data,i))
+
+                pReferencia = trim(@@(item,"$referencia"))
+                pFecha = trim(@@(item,"$fecha"))
+                pAplicacion = trim(@@(item,"$aplicacion"))
+                pConcepto = trim(@@(item,"$concepto"))
+                pDocumento = trim(@@(item,"$documento"))
+                pCategoria = trim(@@(item,"$categoria"))
+                pCuenta = trim(@@(item,"$cuenta"))
+                pIngreso = @@(item,"#ingreso")
+                pEgreso = @@(item,"#egreso")
+                pBeneficiario = trim(@@(item,"$beneficiario"))
+
+                message = ""
+                if pReferencia == "" { message = "No se establecio valor para 'referencia'." }
+                else if length(pReferencia) > 50 { message = "La longitud de 'referencia' es mayor al permitido (50)." }
+                else if pConcepto == "" { message = "No se establecio valor para `concepto`." }
+                else if pDocumento == "" { message = "No se establecio valor para 'documento'." }
+                else if pCategoria == "" { message = "No se establecio valor para `categoria`." }
+                else if pCuenta == "" { message = "No se establecio valor para `cuenta` (cuenta de efectivo)." }
+                else if (pIngreso + pEgreso) == 0 { message = "No se establecio un importe en 'ingreso' o 'egreso'." }
+                else if length(pBeneficiario) > 150 { message = "La longitud de `beneficiario` es mayor al permitido (150)." }
+                if message != "" { do rise_error(511,message) }
+
+                if pFecha != "" {
+                    pFecha = date_format(pFecha,"yyyy-MM-dd")
+                    if pFecha == "" { do rise_error(511,"El valor de `fecha` proporcionado no es válido.") }
+                }
+                if pAplicacion != "" {
+                    pAplicacion = date_format(pAplicacion,"yyyy-MM-dd")
+                    if pAplicacion == "" { do rise_error(511,"El valor de `aplicacion` proporcionado no es válido.") }
+                }
+
+                idocumento = GetDocumento(db,pDocumento)
+                if idocumento == 0 { do rise_error(512,"No se encontro el 'documento' proporcionado para los movimientos de efectivo.") }
+                icategoria = GetCategoria(db,pCategoria)
+                if icategoria == 0 { do rise_error(513,"No se encontro la `categoria` proporcionada.") }
+                icuenta = GetCuenta(db,pCuenta)
+                if icuenta == 0 { do rise_error(514,"No se encontro la `cuenta` (cuenta de efectivo) proporcionada.") }
+
+                new movcuenta
+                {
+                    @"icuenta": icuenta
+                    @"icategoria": icategoria
+                    @"tipo": idocumento
+                    @"referencia": pReferencia
+                    @"fecha": pFecha
+                    @"aplicacion": pAplicacion
+                    @"notas": pConcepto
+                    @"ingreso": pIngreso
+                    @"egreso": pEgreso
+                }
+                do erp.efectivo.movimientos.saveMov(db,movcuenta)
+                affected_rows = affected_rows + 1
+
+                exception
+                {
+                    code = last_error_code()
+                    error = last_error()
+                    do pop_exception()
+
+                    if contains(error,"Duplicate entry") {
+                        code = 589
+                        error = "Entrada duplicada, ya existe un registro con los mismos valores."
+                    }
+                    
+                    if between(code,511,589) { do batch.saveLog(@token,error +"\r\n"+ to.json(item)) }
+                    else { do rise_error(code,error) }
+                }
+
+                percent = percent + progress
+                do updatePercent(percent)
+                // do batch.saveLog(@token,"En proceso ..."+str(percent)+"%")
+            }
+
+            do batch.saveLog(@token,"** Movimientos importados ("+str(affected_rows)+"/"+str(length)+")")
+        }
+    }
+    module "Inicio"
+    {
+        //#region >INICIO
+        fsrc = @("$params/archivo")
+
+        if fsrc == "" { do rise_error(511,"El 'Archivo a importar' es requerido.") }
+        if not(file.exists(fsrc)) { do rise_error(512,"No se encontro el archivo a importar.") }
+        if file.extension(fsrc)!=".csv" { do rise_error(513,"Se esperaba un archivo de tipo `csv`.") }
+
+        do batch.v12.grant("GDF0")
+        ref db = @("&database")
+        ref data = csv.read(fsrc,"")
+        
+        do Import(db,data)
+
+        if file.exists(fsrc) { do file.delete(fsrc) }
+
+        exception
+        {
+            code = last_error_code()
+            error = last_error()
+
+            if file.exists(fsrc) { do file.delete(fsrc) }
+            if isset("db") {
+                if dbr.in_transaction(db) { do dbr.rollback(db) }
+            }
+            do rise_error(code,error)
+        }
+    }
+    
+    do @context.end()
+}

@@ -25,7 +25,7 @@ module ":erp.efectivo.movimientos"
         aplicacion = trim(@@(data,"$aplicacion"))
 
         if fecha == "" { do field.remove(data,"fecha") }
-        if aplicacion == "" { do field.remove(data,"fecha") }
+        if aplicacion == "" { do field.remove(data,"aplicacion") }
 
         if fecha != "" && aplicacion != ""
         {
@@ -41,13 +41,13 @@ module ":erp.efectivo.movimientos"
             @"sys_guid": uuid()
             @"sys_dtcreated*": dbr.sql("now()")
             @"sys_timestamp*": dbr.sql("now()")
+            @"sys_dtexported*": dbr.sql("now()")
             @"sys_info": ""
             @"sys_user": ""
             @"sys_lastuser": ""
             @"sys_exported": @false
-            @"sys_dtexported*": @null
-            @"sys_recver": 0
             @"sys_deleted": @false
+            @"sys_recver": 0
             @"sys_lock*": @null
             @"aplicacion*": @null
             @"auditado": @false
@@ -76,13 +76,13 @@ module ":erp.efectivo.movimientos"
             @"sys_guid": "str"
             @"sys_dtcreated": "date"
             @"sys_timestamp": "date"
+            @"sys_dtexported": "date"
             @"sys_info": "str"
             @"sys_user": "str"
             @"sys_lastuser": "str"
             @"sys_exported": "bool"
-            @"sys_dtexported": "date"
-            @"sys_recver": "int"
             @"sys_deleted": "bool"
+            @"sys_recver": "int"
             @"sys_lock": "int"
             @"aplicacion": "date"
             @"auditado": "bool"

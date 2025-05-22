@@ -15,3 +15,7 @@
 "GD31","Agregar bancos","Agregar banco","","/!/efectivo/bancos/_new/","0","efectivo.banco","DET007","0","action"
 "GD32","Editar bancos","Editar banco","","/!/efectivo/bancos/@_src_context_item_id/","0","efectivo.banco","DET007","1","action"
 "GD33","Eliminar bancos","Eliminar banco","","javascript:InduxsoftCrudlModel.Delete(@_src_context_item_id);","0","efectivo.banco","DET007","1","action"
+
+GDF0,Importar movimientos de cuenta,Importar movcuenta,,/!/batch/taskman/GD/importar.movcuenta/?exit_url_encode=LyEvZWZlY3Rpdm8vY3VlbnRhcy8|,0,efectivo.cuentas,DET019,0,action
+GDF1,Podar movimientos de cuenta,Podar movcuenta,,/!/batch/taskman/GD/podar.movcuenta/?exit_url_encode=LyEvZWZlY3Rpdm8vY3VlbnRhcy8|,0,efectivo.cuentas,DET019,0,action
+GDF2,Limpiar movimientos de cuenta,Limpiar movcuenta,,/!/batch/taskman/GD/limpiar.movcuenta/?exit_url_encode=LyEvZWZlY3Rpdm8vY3VlbnRhcy8|,0,efectivo.cuentas,DET019,0,action

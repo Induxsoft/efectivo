@@ -13,7 +13,6 @@ program "instalador"
         "categoria.csv",
         "cdocumentos.csv",
         "cfg_chq_docs.csv",
-        "cfg_cxp_docs.csv",
         "cstatusorg.csv",
         "ctasasiva.csv",
         "divisa.csv",

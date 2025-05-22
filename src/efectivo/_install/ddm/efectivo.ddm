@@ -85,17 +85,7 @@ model "erp.efectivo"
         // ...
         @"uf_tipoop" ref:"tipooperacion"
     }
-    // Configuración de documentos por pagar
-    entity "cfg_cxp_docs"
-    {
-        @"documento" ref:"cdocumentos" key
-        @"pagable" bool     // Si es true, puede agregarse como documento por pagar al que se le pueden aplicar cargos, bonificaciones y pagos
-        @"apl_int_fin" bool // Si es true, puede usarse para aplicarse como intereses financieros
-        @"apl_int_mor" bool // si es true, puede usarse para aplicarse como intereses moratorios
-        @"apl_bonific" bool // si es true, puede usarse para aplicarse como bonificación
-        @"apl_pago" bool    // si es true, puede usarse para aplicarse como pago
-    }
-    // Configuración de documentos por pagar
+    // Configuración de documentos para los movimientos de cuenta
     entity "cfg_chq_docs"
     {
         @"documento" ref:"cdocumentos" key
@@ -158,7 +148,7 @@ model "erp.efectivo"
     }
     entity "movcta_confirmacion" : "TableModel"
     {
-        @"ref_mov" ref : "movcuenta" unique required
+        @"ref_mov" ref:"movcuenta" unique required
         @"notas" memo
         @"api_confirmacion" bool
         @"api_referencia" string(50)
