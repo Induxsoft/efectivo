@@ -8,4 +8,13 @@ module "controller"
     point @create to create
     point @update to update
     point @delete to delete
+
+    switch @@(@http_context,"$request/get/_view")
+    {
+        case "buscar-cuenta"
+        {
+            point @list to buscarCuenta
+            break
+        }
+    }
 }

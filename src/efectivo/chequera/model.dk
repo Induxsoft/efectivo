@@ -64,6 +64,45 @@ module "model"
         }
     }
 
+    buscarCuenta::&db,&params
+    {
+        sql = "
+        SELECT
+            cta.sys_pk,
+            cta.sys_guid,
+            cta.sys_recver,
+            cta.clabe,
+            cta.numcuenta,
+            cta.codcuenta,
+            cta.nombre,
+            COALESCE(clabe,numcuenta,codcuenta,'') AS codigo,
+            cta.idivisa,
+            dvs.codigo AS cdivisa,
+            dvs.tcambio
+        FROM chequera AS cta
+            INNER JOIN divisa AS dvs ON cta.idivisa = dvs.sys_pk
+        WHERE #<condition>
+        "
+        
+        if trim(@@(params,"$id")) != "" {
+            condition = "(cta.sys_pk = @id OR cta.sys_guid = @id OR cta.clabe = @id OR cta.numcuenta = @id OR cta.codcuenta = @id)"
+            return dbr.rec(db,ftext(sql),params)
+        }
+        if trim(@@(params,"$search")) != "" {
+            condition = ftext("IF(TRIM(@search)='', true, (
+                cta.nombre LIKE CONCAT('%',@search,'%')
+                OR cta.clabe LIKE CONCAT('%',@search,'%')
+                OR cta.numcuenta LIKE CONCAT('%',@search,'%')
+                OR cta.codcuenta LIKE CONCAT('%',@search,'%')
+            ))
+            ORDER BY cta.nombre
+            LIMIT #<@default_max_rows>;
+            ")
+            return dbr.list(db,ftext(sql),params)
+        }
+        return list.create()
+    }
+
     prepareView::&db,&params,&data
     {
         ref cBancos = dbr.list(db,"SELECT sys_pk,nombre FROM banco ORDER BY sys_pk;",@null)

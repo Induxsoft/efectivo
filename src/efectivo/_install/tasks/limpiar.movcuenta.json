@@ -1,0 +1,24 @@
+{
+    "icuenta": {
+        "control":"input-key",
+        "caption":"Filtrar por cuenta de efectivo",
+        "source": {
+            "type":"service",
+            "source":"/!/efectivo/cuentas/?_view=buscar-cuenta&search=@search",
+            "keyfield":"sys_pk",
+            "searchfield":"codigo",
+            "showfield":"nombre",
+            "columns":"nombre,cdivisa,clabe,numcuenta,codcuenta",
+            "ccaptions":"Nombre,Divisa,Clabe,Número de cuenta, Código de cuenta"
+        }
+    },
+    "confirm": {
+        "control":"bool",
+        "name":"confirm_GDF2",
+        "required":"true",
+        "caption":"Confirmo y entiendo que al ejecutar esta tarea los datos no se podrán recuperar.",
+        "wrp_attr": {
+            "class":"form-check ms-3"
+        }
+    }
+}

@@ -37,12 +37,30 @@ program "Limpiar movimientos de efectivo"
     //#region >EJECUCIÓN
     do batch.v12.grant("GDF2")
     
+    ref params = @("&params")
     ref db = @("&database")
-    do dbr.begin(db)
-    do batch.saveLog(@token,"> Limpiando movimientos de efectivo")
+
+    icuenta = @@(params,"#icuenta")
+    confirmed = parse.bool(@@(params,"$confirm_GDF2"))
     
-    do dbr.execute(db,"DELETE FROM movcta_confirmacion",@null)
-    affected_rows = dbr.execute(db,"DELETE FROM movcuenta",@null)
+    if not(confirmed) { do rise_error(511,"No se confirmo la acción") }
+    params<"icuenta"> : icuenta
+
+    do dbr.begin(db)
+
+    if icuenta > 0 {
+        chequera = dbr.str(db,"select concat(coalesce(clabe,numcuenta,codcuenta,''),' - ',nombre) from chequera where sys_pk = @icuenta",params)
+        do batch.saveLog(@token,"> "+chequera)
+    }
+    do batch.saveLog(@token,"Limpiando movimientos de efectivo...")
+    
+    do dbr.execute(db,"
+        DELETE a
+        FROM movcta_confirmacion a
+            LEFT JOIN movcuenta b ON a.ref_mov = b.sys_pk
+        WHERE IF(@icuenta > 0, b.icuenta = @icuenta, TRUE)
+    ",@null)
+    affected_rows = dbr.execute(db,"DELETE FROM movcuenta WHERE IF(@icuenta > 0, icuenta = @icuenta, TRUE)",@null)
 
     do dbr.commit(db)
     do UpdatePercent(100)

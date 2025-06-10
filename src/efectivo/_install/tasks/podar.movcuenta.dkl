@@ -275,6 +275,9 @@ program "Podar movimientos de efectivo"
     ref db = @("&database")
 
     truncate = parse.bool(@@(params,"$truncate"))
+    confirmed = parse.bool(@@(params,"$confirm_GDF1"))
+    
+    if not(confirmed) { do rise_error(511,"No se confirmo la acción") }
 
     do Log("> Podar movimientos de efectivo " + ifstr(truncate,"[Truncar datos]",""))
 
