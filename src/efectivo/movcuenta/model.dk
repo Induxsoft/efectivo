@@ -73,42 +73,47 @@ module "model"
 
         if ejercicio <= 0 { ejercicio = val(hoy("yyyy")) }
         if periodo <= 0 || periodo > 12 { periodo = val(hoy("MM")) }
-
+        
         first_day = str(ejercicio) + "-" + str(format(periodo,"00")) + "-01"
         
         params<"ejercicio"> : ejercicio
         params<"periodo"> : periodo
         params<"fd"> : first_day
-
+        
+        //  #<@filter_by_status>
+        // #<@filter_range_fecha>
         sql_sinicial = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_inicial FROM movcuenta mov 
         WHERE icuenta = @_entity_id 
-            #<@filter_by_status>
-            #<@filter_range_fecha>
-        AND DATE(aplicacion) < @fd AND NOT IFNULL(cancelado,0);"
+        AND DATE(aplicacion) < date(@fd) AND NOT IFNULL(cancelado,0);"
 
-        sql_i_e = "SELECT IFNULL(SUM(IFNULL(ingreso,0)),0) AS ingresos, IFNULL(SUM(IFNULL(egreso,0)),0) AS egresos FROM movcuenta mov
+        sql_i_e = "SELECT 
+            IFNULL(SUM(IFNULL(ingreso,0)),0) AS ingresos, 
+            IFNULL(SUM(IFNULL(egreso,0)),0) AS egresos 
+            FROM movcuenta mov
         WHERE icuenta = @_entity_id 
             #<@filter_by_status>
             #<@filter_range_fecha>
-        AND DATE(aplicacion) BETWEEN @fd AND LAST_DAY(@fd) AND NOT IFNULL(cancelado,0);"
+        AND DATE(aplicacion) BETWEEN date(@fd) 
+        AND LAST_DAY(date(@fd)) AND NOT IFNULL(cancelado,0);"
 
+        // #<@filter_by_status>
+        // #<@filter_range_fecha>
         sql_stotal = "SELECT IFNULL(SUM(IFNULL(ingreso,0) - IFNULL(egreso,0)),0) AS saldo_total FROM movcuenta mov
         WHERE icuenta = @_entity_id 
-            #<@filter_by_status>
-            #<@filter_range_fecha>
         AND NOT IFNULL(cancelado,0);"
 
         sInicial = dbr.num(db,ftext(sql_sinicial),params)
-        ref IE = dbr.rec(db,ftext(sql_i_e),params)
+        ref saldo_ie = dbr.rec(db,ftext(sql_i_e),params)
+        
         sTotal = dbr.num(db,ftext(sql_stotal),params)
         // Saldo al final del periodo
-        sFinalP = (sInicial + @@(IE,"#ingresos") - @@(IE,"#egresos"))
+        sFinalP = (sInicial + @@(saldo_ie,"#ingresos") - @@(saldo_ie,"#egresos"))
 
         new saldos
         {
             @"saldo_inicial": sInicial
-            @"ingresos": @@(IE,"#ingresos")
-            @"egresos": @@(IE,"#egresos")
+            @"ingresos": @@(saldo_ie,"#ingresos")
+            @"egresos": @@(saldo_ie,"#egresos")
             @"saldo_total": sTotal
             @"saldo_alfinal": sFinalP
         }
@@ -158,6 +163,9 @@ module "model"
         // [range]
         if not(field.exist(params,"fdr_from")) { params<"fdr_from"> : "" }
         if not(field.exist(params,"fdr_to")) { params<"fdr_to"> : "" }
+        
+        if not(field.exist(params,"periodo")){params<"periodo">:@@(params,"#fdr_month")}
+        if not(field.exist(params,"ejercicio")){params<"ejercicio">:@@(params,"#fdr_year")}
 
         @mov_fdr_field = ifstr(@@(params,"#fdr_field")==1, "mov.sys_dtcreated", "mov.aplicacion")
         @filter_range_fecha = ftext(@filter_range_fecha)
