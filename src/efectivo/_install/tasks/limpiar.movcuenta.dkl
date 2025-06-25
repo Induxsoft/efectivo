@@ -60,7 +60,7 @@ program "Limpiar movimientos de efectivo"
             LEFT JOIN movcuenta b ON a.ref_mov = b.sys_pk
         WHERE IF(@icuenta > 0, b.icuenta = @icuenta, TRUE)
     ",@null)
-    affected_rows = dbr.execute(db,"DELETE FROM movcuenta WHERE IF(@icuenta > 0, icuenta = @icuenta, TRUE)",@null)
+    affected_rows = dbr.execute(db,"DELETE FROM movcuenta WHERE IF(@icuenta > 0, icuenta = @icuenta, TRUE)",params)
 
     do dbr.commit(db)
     do UpdatePercent(100)
@@ -75,7 +75,7 @@ program "Limpiar movimientos de efectivo"
             if dbr.in_transaction(db) { do dbr.rollback(db) }
         }
         if contains(error,"Cannot delete or update a parent row: a foreign key constraint fails") {
-            error = "No es posible limpiar, otros registros dependen de los gastos."
+            error = "No es posible limpiar, otros registros dependen de los movimientos."
         }
         do rise_error(code,error)
     }
