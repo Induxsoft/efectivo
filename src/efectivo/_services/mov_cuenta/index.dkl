@@ -69,6 +69,8 @@ module ""
             case "mov_cuenta"
             {
                 #include "lib.mov_cuenta.dk"
+                
+                do dbr.execute(db,"update movcuenta set sys_recver=0 where sys_recver is null ",@null)
 
                 switch tolower(ifempty(@@(postData,"$act"),@@(getData,"$act")))
                 {
