@@ -88,6 +88,7 @@ var mov=
             else{this.notas.removeAttribute("disabled");}
         });
     },
+
     data_preview:null,
     SelectedElement(data)
 	{
@@ -131,6 +132,27 @@ var mov=
             this.media_list.removeMediaByIndex(item.index);
         })
         .catch(error => { alert(error.message ?? JSON.stringify(error)) })
+    },
+    delete()
+    {
+        const sys_pk = this.table_cuentas?.DataArray[this.table_cuentas?.CurrentRowIndex()]?.sys_pk || 0;
+        if (sys_pk < 1 || this.req_delete_mov) return;
+        if (!confirm("¿Esta seguro de eliminar el movimiento seleccionado?")) return;
+        this.req_delete_mov = true;
+
+        const onSuccess = (response) => {
+            alert("¡El movimiento se ha eliminado!");
+            window.location.reload();
+        }
+
+        const onFailure = (failure) => {
+            if (failure.message) alert(failure.message);
+            else console.error(failure);
+            this.req_delete_mov = false;
+        }
+
+        let endpoint = "/!/efectivo/movcuenta/"+sys_pk+"/movimientos/";
+        InduxsoftCrudlModel.InvokeService(endpoint,null,onSuccess,onFailure,"DELETE",false,false);
     },
     DataRowSelected(msg=true)
     {

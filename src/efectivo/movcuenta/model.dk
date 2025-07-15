@@ -324,6 +324,37 @@ module "model"
         }
     }
 
+    mov.delete::&db,&params
+    {
+        @use_transaction = @false
+        do dbr.apps.action.pre("GD26")
+        do dbr.begin(db)
+
+        ref mov = dbr.rec(db,"select * from movcuenta where sys_pk = @_entity_id",params)
+        if isnull(mov) { do rise_error(511,"No se encontro información del movimiento proporcionado.") }
+
+        ref entity = entity.delete(db,params)
+
+        do dbr.apps.action.pos(entity)
+        do dbr.commit(db)
+        do dbr.apps.action.ext(entity)
+
+        exception
+        {
+            do errordet(@false)
+            code = last_error_code()
+            error = last_error()
+
+            if contains(error,"Cannot delete or update a parent row") || contains(error,"DELETE Error") {
+                error = "No es posible eliminar, otros registros dependen del movimiento proporcionado."
+            }
+
+            if dbr.in_transaction(db){ do dbr.rollback(db) }
+            do dbr.apps.action.log()
+            do rise_error(code,error)
+        }
+    }
+
     mov.blank::&db,&params
     {
         new data {}

@@ -7,10 +7,12 @@
 "GD15","Retiro","Retiro","","/!/efectivo/movcuenta/_new/retiro/?icuenta=@_src_context_item_id","0","efectivo.cuentas","DET019","0","action"
 "GD16","Transferencia","Transferencia","","/!/efectivo/movcuenta/_new/traspaso/?icuenta=@_src_context_item_id","0","efectivo.cuentas","DET019","0","action"
 "GD17","Estado de cuenta","Estado de cuenta","","/!/efectivo/movcuenta/@_src_context_item_id/movimientos/","0","efectivo.cuentas","DET019","1","action"
+
 "GD20","Confirmar movimiento","Confirmar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","1","action"
 "GD21","Conciliar movimiento","Conciliar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","1","action"
 "GD22","Auditar movimiento","Auditar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","1","action"
 "GD23","Cancelar movimiento","Cancelar","","/efectivo/_services/mov_cuenta/","0","efectivo.cuentas","DET079","1","action"
+
 "GD30","Bancos","Bancos","","/!/efectivo/bancos/","0","efectivo.banco","DET007","0","action"
 "GD31","Agregar bancos","Agregar banco","","/!/efectivo/bancos/_new/","0","efectivo.banco","DET007","0","action"
 "GD32","Editar bancos","Editar banco","","/!/efectivo/bancos/@_src_context_item_id/","0","efectivo.banco","DET007","1","action"

@@ -78,11 +78,12 @@ module "list.dk"
 
     function print_buttons()
     {
-        btn_cls = "btn btn-sm border-secondary induxsoft-corners btn-main-action"
+        btn_cls = "btn btn-main-action btn-sm border-secondary induxsoft-corners"
         #$
         a(href="#<@MOV_DEPOSITO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Depósito"}
         a(href="#<@MOV_RETIRO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Retiro"}
         a(href="#<@MOV_TRASPASO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Transferencia"}
+        button(class="#<btn_cls>" type="button" onclick="mov.delete();"){$"#<@ICON_TRASH> Eliminar"}
         #!
     }
     point @buttons to print_buttons

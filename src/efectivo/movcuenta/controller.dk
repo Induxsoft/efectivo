@@ -7,6 +7,7 @@ module "controller"
         case "movimientos"
         {
             point @read to mov.obtenerMovimientosCuenta
+            point @delete to mov.delete
             @form_view = "cxp.movcuenta.dk"
             break
         }
