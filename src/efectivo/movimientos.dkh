@@ -182,6 +182,7 @@ module ":erp.efectivo.movimientos"
         {
             @"aplicacion": @@(data,"$faplicacion")
             @"auditado": @true
+            @"beneficiario": @@(data,"$beneficiario")
             @"cancelado": @false
             @"conciliado": @@(data,"$conciliado")
             @"contabilizado": @false
@@ -214,6 +215,7 @@ module ":erp.efectivo.movimientos"
             @"icategoria": @@(data,"#icategoria")
             @"icuenta": @@(data,"#icuenta")
         }
+        if @@(data,"#iproveedor") > 0 { retiro<"uf_iproveedor"> : @@(data,"#iproveedor") }
         return erp.efectivo.movimientos.saveMov(db,retiro)
     }
 

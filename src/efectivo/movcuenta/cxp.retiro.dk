@@ -90,7 +90,7 @@ module "form.dk"
                     div(class="col-12 col-sm-3")
                     {
                         small(class="form-label" "for"="txt_importe"){$"Importe:"}
-                        input(type="number" class="induxsoft-form-control" name="importe" min="1" step="0.000001" id="txt_importe" value="#<form('importe','nm',@null)>" required="")
+                        input(type="number" class="induxsoft-form-control induxsoft-num-field" name="importe" min="1" step="0.000001" id="txt_importe" value="#<form('importe','nm',@null)>" required="")
                     }
                 }
 
