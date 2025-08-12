@@ -272,4 +272,86 @@ module ":erp.efectivo.movimientos"
             do rise_error(last_error_code(),last_error())
         }
     }
+    // tabla dinamica rel_efe_det, Identificación de movimientos de efectivo
+    ConvertImporteDivisa::importe,tcdoc,tcambio
+    {
+        factor=(tcdoc/tcambio)
+        return importe * factor
+    }
+    GetDataCuenta::&db,pk_mov
+    {
+        new p{@"key":pk_mov}
+       return dbr.rec(db,"SELECT m.sys_pk,m.sys_guid,m.ingreso,m.egreso,m.referencia,d.codigo coddivisa,d.tcambio 
+                FROM movcuenta m
+                INNER JOIN chequera c ON m.icuenta=c.sys_pk
+                INNER JOIN divisa d ON c.idivisa=d.sys_pk where m.sys_pk=@key",p)
+    }
+    relacionados::&db,pk_mov 
+    {
+        new p{@"key":pk_mov}
+
+        ref relacionados=dbr.list(db,"select * from rel_efe_det",@null)
+        ref encontrados=list.create()
+
+        for i = 0; i < @count(relacionados)
+        {
+            ref relacionado=@item(relacionados,i)
+            if trim(@@(relacionado,"$query"))!=""
+            {
+                ref data=dbr.list(db,@@(relacionado,"$query"),p)
+                if @count(data) > 0
+                {
+                    relacionado<"_relacionados*">:data
+                    do list.add(encontrados,relacionado)
+                }
+                
+            }
+        }
+
+        return encontrados
+    }
+    importe_no_identificado::&db,pk_mov 
+    {
+        ref movimiento=GetDataCuenta(db,pk_mov)
+        
+        if isnull(movimiento){return 0}  
+        
+        ref relacionados=relacionados(db,pk_mov)
+        importe = 0
+        for i = 0; i < @count(relacionados)
+        {
+            ref relacionado=@item(relacionados,i)
+            ref _relacionados=@@(relacionado,"&_relacionados")
+            for j = 0; j < @count(_relacionados)
+            {
+                ref _rel=@item(_relacionados,j)
+                importe=importe + ConvertImporteDivisa(@@(_rel,"#"+@@(relacionado,"$c_importe") ),@@(movimiento,"#tcambio"),@@(_rel,"#"+@@(relacionado,"$c_tcambio")  ))
+            }
+        }
+
+        if @@(movimiento,"#ingreso")> 0{return @@(movimiento,"#ingreso") - importe  }
+        if @@(movimiento,"#egreso")> 0{return @@(movimiento,"#egreso") - importe  }
+
+        return 0
+    }
+    relacionable::&db,pk_mov, divisa, importe,tcambio
+    {
+        new p
+        {
+            @"divisa":divisa
+            @"key":pk_mov
+        }
+        
+        ref movimiento=GetDataCuenta(db,pk_mov)
+        if isnull(movimiento){return @false}
+
+        if tcambio== 0{tcambio=dbr.num(db,"select tcambio from divisa where codigo=@divisa",p)}
+        if tcambio== 0{tcambio= 1}
+
+        i=ConvertImporteDivisa(importe,@@(movimiento,"#tcambio"),tcambio)
+	    
+        if importe_no_identificado(db,pk_mov) < i {return @false}
+
+        return @true
+    }
 }

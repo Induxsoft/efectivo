@@ -32,5 +32,10 @@ module "controller"
             @form_view = "cxp.traspaso.dk"
             break
         }
+        case "rel_efect_mov"
+        {
+            point @read to mov.obtenerMovimientosCuentaPending
+            break
+        }
     }
 }

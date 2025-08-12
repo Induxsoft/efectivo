@@ -224,7 +224,68 @@ module "model"
 
         return data
     }
-
+    mov.obtenerMovimientosCuentaPending::&db,&params
+    {
+        sql = "
+        SELECT
+            mov.sys_pk,
+            mov.sys_guid,
+            mov.sys_recver,
+            cta.sys_guid AS `cta`,
+            mov.sys_guid AS `mov`,
+            doc.const AS documento,
+            mov.referencia,
+            DATE_FORMAT(mov.fecha,'%Y-%m-%d') AS creado,
+            DATE_FORMAT(mov.aplicacion,'%Y-%m-%d') AS aplicacion,
+            #<@field> importe,
+            cat.descripcion AS categoria,
+            IFNULL(mov.beneficiario,'') AS beneficiario,
+            IFNULL(mov.auditado,0) auditado,
+            IFNULL(mov.conciliado,0) conciliado,
+            IFNULL(mov.contabilizado,0) contabilizado,
+            IFNULL(mov.cancelado,0) cancelado,
+            ifnull(mov.confirmado,0) confirmado,
+            IFNULL(mov.partida,'') partida,
+            IFNULL(poliza,'') poliza,
+            mov.notas,
+            mov.icuenta,
+            if(IFNULL(mov.auditado,0),'Sí','No') fauditado,
+            if(IFNULL(mov.conciliado,0),'Sí','No') fconciliado,
+            if(IFNULL(mov.contabilizado,0),'Sí','No') fcontabilizado,
+            if(IFNULL(mov.cancelado,0),'Sí','No') fcancelado,
+            if(ifnull(mov.confirmado,0),'Sí','No') fconfirmado,
+            mc.notas notas_mc,
+            mc.api_confirmacion,
+            mc.api_referencia,
+            mc.api_url
+        FROM movcuenta AS mov
+            INNER JOIN chequera AS cta ON mov.icuenta = cta.sys_pk
+            INNER JOIN cdocumentos AS doc ON doc.id = mov.tipo
+            INNER JOIN categoria AS cat ON cat.sys_pk = mov.icategoria
+            left join movcta_confirmacion mc on mov.sys_pk=mc.ref_mov
+        WHERE #<@field>>0
+        AND (mov.sys_pk=@s or concat_ws('','mov.referencia,cat.descripcion,mov.notas,mov.beneficiario,') like '%@{s}%')
+        ORDER BY mov.referencia"
+        
+        switch @@(params,"$_entity_id")
+        {
+            case "retiro"
+            {
+                @field="mov.egreso"
+                break
+            }
+            case "deposito"
+            {
+                @field="mov.ingreso"
+                break
+            }
+            default
+            {
+                do rise_error(500,"No ha definido el tipo retiro/deposito")
+            }
+        }
+        return dbr.list(db,ftext(sql),params)
+    }
     mov.deposito::&db,&params,&data
     {
         @use_transaction = @false
