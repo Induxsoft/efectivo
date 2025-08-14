@@ -37,5 +37,11 @@ module "controller"
             point @read to mov.obtenerMovimientosCuentaPending
             break
         }
+        case "org_movimiento"
+        {
+            point @read to mov.OrigenMovimiento
+            @form_view = "origen-movimiento.dk"
+            break
+        }
     }
 }

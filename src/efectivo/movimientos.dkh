@@ -325,7 +325,7 @@ module ":erp.efectivo.movimientos"
             for j = 0; j < @count(_relacionados)
             {
                 ref _rel=@item(_relacionados,j)
-                importe=importe + ConvertImporteDivisa(@@(_rel,"#"+@@(relacionado,"$c_importe") ),@@(movimiento,"#tcambio"),@@(_rel,"#"+@@(relacionado,"$c_tcambio")  ))
+                importe=importe + ConvertImporteDivisa(@@(_rel,"#"+@@(relacionado,"$c_importe") ),@@(_rel,"#"+@@(relacionado,"$c_tcambio")  ),@@(movimiento,"#tcambio"))
             }
         }
 
@@ -334,6 +334,9 @@ module ":erp.efectivo.movimientos"
 
         return 0
     }
+   /*  pk_mov = sys_pk del movimiento de cuenta
+    divisa = codigo de una divisa al que se tranformará el importe con base al tipo de cambio(tdoc)
+    tcambio= tcambio de la divisa */
     relacionable::&db,pk_mov, divisa, importe,tcambio
     {
         new p
@@ -348,7 +351,7 @@ module ":erp.efectivo.movimientos"
         if tcambio== 0{tcambio=dbr.num(db,"select tcambio from divisa where codigo=@divisa",p)}
         if tcambio== 0{tcambio= 1}
 
-        i=ConvertImporteDivisa(importe,@@(movimiento,"#tcambio"),tcambio)
+        i=ConvertImporteDivisa(importe,tcambio,@@(movimiento,"#tcambio"))
 	    
         if importe_no_identificado(db,pk_mov) < i {return @false}
 

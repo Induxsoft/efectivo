@@ -84,6 +84,7 @@ module "list.dk"
         a(href="#<@MOV_RETIRO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Retiro"}
         a(href="#<@MOV_TRASPASO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Transferencia"}
         button(class="#<btn_cls>" type="button" onclick="mov.delete();"){$"#<@ICON_TRASH> Eliminar"}
+        a(href="#<replace(@REPORT_ORG_MOV,'@cuenta',@('$./cuenta/sys_pk'))>" class="#<btn_cls>" title="Conciliación de origen de movimientos."){$"#<@ICON_IMP_DOC>"}
         #!
     }
     point @buttons to print_buttons
@@ -259,6 +260,7 @@ module "list.dk"
                 {
                     "edit-tr"
                     {
+                        "edit-th"(type="NoEditable" field="sys_pk" textalign="center"){$"ID"}
                         "edit-th"(type="NoEditable" field="btn_confirmado" textalign="center"){$""}
                         "edit-th"(type="NoEditable" field="documento"){$"Documento"}
                         "edit-th"(type="NoEditable" field="referencia"){$"Referencia"}
