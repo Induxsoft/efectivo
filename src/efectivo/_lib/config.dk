@@ -38,7 +38,9 @@ module
 	@EFC_CHEQUERA = "/!/efectivo/cuentas/"
 	@CHQ_AGREGAR = "/!/efectivo/cuentas/_new/"
 	@REPORT_ORG_MOV="/!/efectivo/movcuenta/@cuenta/org_movimiento/"
-	@MOVCUENTA="/!/efectivo/movcuenta/movimientos/"
+	@MOVCUENTA="/!/efectivo/movcuenta/@cuenta/movimientos/"
+	//informe de origen de movimientos de cuenta
+	@mov_cuenta_show_totales=@true
 	//#endregion
 
 	//#region cxp_movcuenta

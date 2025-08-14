@@ -67,8 +67,6 @@ module "list.dk"
         
         if not(@@(mov,"#cancelado"))
         {
-            // jsonmov=to.json(mov)
-
             mov<"btn_confirmado">:"<button style='cursor:pointer;' onclick='mov.MovCuentaModal("+str(i)+")'>Confirmación</button>"
             mov<"fconciliado">:"<input type='checkbox' id='check_conciliado_"+str(i)+"' "+ifstr(@@(mov,"#conciliado"),"checked","")+"='' onchange='mov.changeCheck("+str(i)+",0,this)'>"
             mov<"fauditado">:"<input type='checkbox' id='check_auditado_"+str(i)+"' "+ifstr(@@(mov,"#auditado"),"checked","")+"='' onchange='mov.changeCheck("+str(i)+",1,this)'>"
@@ -84,7 +82,7 @@ module "list.dk"
         a(href="#<@MOV_RETIRO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Retiro"}
         a(href="#<@MOV_TRASPASO>?icuenta=#<@_entity_id>" class="#<btn_cls>"){$"Transferencia"}
         button(class="#<btn_cls>" type="button" onclick="mov.delete();"){$"#<@ICON_TRASH> Eliminar"}
-        a(href="#<replace(@REPORT_ORG_MOV,'@cuenta',@('$./cuenta/sys_pk'))>" class="#<btn_cls>" title="Conciliación de origen de movimientos."){$"#<@ICON_IMP_DOC>"}
+        a(href="#<replace(@REPORT_ORG_MOV,'@cuenta',@('$./cuenta/sys_pk'))>" class="#<btn_cls>" title="Conciliación de origen de movimientos."){$"#<@ICON_DOCUMENT>"}
         #!
     }
     point @buttons to print_buttons
@@ -246,13 +244,30 @@ module "list.dk"
                 }
             }
 
-            // div(style="width:auto; min-width:100%; max-height:60vh; display:flex;")
+        
             "edit-table"(id="#<table_id>" data="#<to.json(Movimientos)>" style="width:100%;"
             "control-styles"="
                 tr th{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; -o-text-overflow:ellipsis; }
                 tr td { font-size:.8rem; }
                 th { font-size:.9rem; outline:none !important; font-weight:500 !important; }
                 #__table_input { font-size:unset !important; }
+                @media print 
+                {
+                    div:has(> ##<table_id>)
+                    {
+                        max-height:unset !important; overflow:hidden; 
+                    }
+                    table {
+                        table-layout:auto;
+                        width:100%;
+                    }
+                    th {
+                        font-size:.9rem;
+                    }
+                    td {
+                        font-size:.8rem;
+                    }
+                }
             "
             )
             {
@@ -268,7 +283,7 @@ module "list.dk"
                         "edit-th"(type="NoEditable" field="aplicacion" textalign="center"){$"Aplicación"}
                         "edit-th"(type="NoEditable" field="ingreso" textalign="end" format="true" decs="#<@DECIMAL_PRECISION>" prefix="$ " thousandssep="true"){$"Ingreso"}
                         "edit-th"(type="NoEditable" field="egreso" textalign="end" format="true" decs="#<@DECIMAL_PRECISION>" prefix="$ " thousandssep="true"){$"Egreso"}
-                        "edit-th"(type="NoEditable" field="categoria"){$"Categoria"}
+                        "edit-th"(type="NoEditable" field="categoria"){$"Categoría"}
                         "edit-th"(type="NoEditable" field="beneficiario"){$"Beneficiario"}
                         "edit-th"(type="NoEditable" field="fconciliado" textalign="center"){$"Conciliado"}
                         "edit-th"(type="NoEditable" field="fauditado" textalign="center"){$"Auditado"}

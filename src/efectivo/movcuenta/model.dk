@@ -464,6 +464,24 @@ module "model"
 
     mov.OrigenMovimiento::&db,&params
     {
+        if not(field.exist(params,"decimals")){ params<"decimals"> : parse.num(dbr.vars.get(db,"FXCA001")) }
+        // Establecer filtros predeterminados
+        if not(field.exist(params,"cancelado")) { params<"cancelado"> : 0 }
+        if not(field.exist(params,"fdr_field")) { params<"fdr_field"> : 2 }
+        // fdr_init
+        if not(field.exist(params,"fdr_mode")) { params<"fdr_mode"> : "month" }
+        // [month]
+        if not(field.exist(params,"fdr_year")) { params<"fdr_year"> : @curr_year }
+        if not(field.exist(params,"fdr_month")) { params<"fdr_month"> : @curr_month }
+        // [lastdays]
+        if not(field.exist(params,"fdr_range")) { params<"fdr_range"> : 30 }
+        // [range]
+        if not(field.exist(params,"fdr_from")) { params<"fdr_from"> : "" }
+        if not(field.exist(params,"fdr_to")) { params<"fdr_to"> : "" }
+        
+        if not(field.exist(params,"periodo")){params<"periodo">:@@(params,"#fdr_month")}
+        if not(field.exist(params,"ejercicio")){params<"ejercicio">:@@(params,"#fdr_year")}
+
         @mov_fdr_field = ifstr(@@(params,"#fdr_field")==1, "mov.sys_dtcreated", "mov.aplicacion")
         @filter_range_fecha = ftext(@filter_range_fecha)
 
@@ -489,7 +507,7 @@ module "model"
             ifnull(mov.confirmado,0) confirmado,
             IFNULL(mov.partida,'') partida,
             IFNULL(poliza,'') poliza,
-            mov.notas,
+            concat(IFNULL(mov.beneficiario,''),if(trim(IFNULL(mov.beneficiario,''))='','',' - '),mov.notas)notas,
             mov.icuenta,
             if(IFNULL(mov.auditado,0),'Sí','No') fauditado,
             if(IFNULL(mov.conciliado,0),'Sí','No') fconciliado,
@@ -512,10 +530,24 @@ module "model"
         "
 
         ref movimientos=dbr.list(db,ftext(sql),params)
-        // for i = 0; i < @count(movimientos)
-        // {
-        //     ref mov=@item(movimientos,i)
-        // }
-        return movimientos
+        for i = 0; i < @count(movimientos)
+        {
+            ref mov=@item(movimientos,i)
+            ref @erp.efectivo.movimientos.array_relacionados=erp.efectivo.movimientos.relacionados(db,@@(mov,"#sys_pk"))
+            mov<"relacionados*">:@erp.efectivo.movimientos.array_relacionados
+            mov<"importe_por_identificar">:erp.efectivo.movimientos.importe_no_identificado(db,@@(mov,"#sys_pk"))
+        }
+        new entity
+        {
+            @"cuenta*":dbr.rec(db,"SELECT c.sys_pk,c.clabe,c.nombre,c.codcuenta,c.notas,c.numcuenta,d.codigo AS divisa,d.tcambio 
+            FROM chequera c 
+            INNER JOIN divisa d ON c.idivisa=d.sys_pk
+            where c.sys_pk=@_entity_id",params)
+            @"movimientos*":movimientos
+        }
+        if @mov_cuenta_show_totales{entity<"saldos*">:mov.obtenerSaldos(db,params,@null)}
+
+        do setPrintTitles(db,entity)
+        return entity
     }
 }
