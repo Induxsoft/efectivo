@@ -275,6 +275,7 @@ module "model"
         AND mov.tipo in(65,66,67)
         AND v.sys_pk IS NULL
         AND c.sys_pk IS NULL
+        AND mov.icuenta=@cuenta
         AND (trim(mov.sys_pk)=@s or concat_ws(' ',mov.referencia,cat.descripcion,mov.notas,mov.beneficiario) like concat('%',@s,'%') )
         ORDER BY mov.referencia"
         
