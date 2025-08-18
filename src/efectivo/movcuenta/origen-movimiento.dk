@@ -158,8 +158,8 @@ module ""
                     select(id="poridentificar" name="poridentificar" class="induxsoft-form-select" title="Filtrar por identificar")
                     {
                         option(value="*" "#<ifstr(@('$parameters/poridentificar')=='*','selected','')>"="true"){"Todos(*)"}
-                        option(value="1" "#<ifstr(@('$parameters/poridentificar')=='1','selected','')>"="true"){"Por identificar"}
-                        option(value="0" "#<ifstr(@('$parameters/poridentificar')=='0','selected','')>"="true"){"Identificados"}
+                        option(value="1" "#<ifstr(@('$parameters/poridentificar')=='1','selected','')>"="true"){"Saldos por identificar"}
+                        option(value="0" "#<ifstr(@('$parameters/poridentificar')=='0','selected','')>"="true"){"Saldos identificados"}
                     }
                 }
             }
