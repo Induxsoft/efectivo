@@ -111,7 +111,7 @@ module ""
                     }
                 }
 
-                div(class="d-flex align-items-center mt-2 d-block-sm")
+                div(class="d-flex align-items-center mt-2 d-block-sm" id="container-selects")
                 {
                     select(id="confirmado" name="confirmado" class="induxsoft-form-select" title="Filtrar por confirmación")
                     {
@@ -146,6 +146,20 @@ module ""
                         option(value="*" "#<ifstr(@('$parameters/cancelado')=='*','selected','')>"="true"){"Todos(*)"}
                         option(value="1" "#<ifstr(@('$parameters/cancelado')=='1','selected','')>"="true"){"Cancelados"}
                         option(value="0" "#<ifstr(@('$parameters/cancelado')=='0','selected','')>"="true"){"Vigentes"}
+                    }
+
+                    select(id="depret" name="depret" class="induxsoft-form-select" title="Filtrar por depósito/retiro")
+                    {
+                        option(value="*" "#<ifstr(@('$parameters/depret')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('$parameters/depret')=='1','selected','')>"="true"){"Depósitos"}
+                        option(value="0" "#<ifstr(@('$parameters/depret')=='0','selected','')>"="true"){"Retiros"}
+                    }
+
+                    select(id="poridentificar" name="poridentificar" class="induxsoft-form-select" title="Filtrar por identificar")
+                    {
+                        option(value="*" "#<ifstr(@('$parameters/poridentificar')=='*','selected','')>"="true"){"Todos(*)"}
+                        option(value="1" "#<ifstr(@('$parameters/poridentificar')=='1','selected','')>"="true"){"Por identificar"}
+                        option(value="0" "#<ifstr(@('$parameters/poridentificar')=='0','selected','')>"="true"){"Identificados"}
                     }
                 }
             }
@@ -212,7 +226,7 @@ module ""
                     }
                 }
             }
-            div(class="#<ifstr(@count(movimientos)!=0,'h-100','')>" style="overflow: auto;")
+            div(class="#<ifstr(@count(movimientos)!=0 && @count(movimientos)!=1,'h-100','')>" style="overflow: auto;")
             {
                 table(class="table h-100" id="table_movs")
                 {
@@ -285,7 +299,6 @@ module ""
                                     }
                                     #!
                                 }
-                                
                             }
                             #$
                             tr
@@ -294,7 +307,7 @@ module ""
                                 importe_por_identificar=@@(movimiento,'#importe_por_identificar')
                                 style=ifstr(importe_por_identificar!=0,'color:red;','')
                                 #$
-                                td(class="fw-bold text-center" style="#<style>" colspan="6"){"Por identificar: #<importe_por_identificar:$ #.#.00>"}
+                                td(class="fw-bold text-center" style="#<style>" colspan="6"){"Por identificar: $ #<number_format(importe_por_identificar)>"}
                             }
                         }
                         #!
@@ -303,7 +316,7 @@ module ""
                             #$
                             tr(style="background-color: #e1eff7;")
                             {
-                                td(colspan="6" class="text-center fw-bold"){"No hay movimentos de cuenta"}
+                                td(colspan="6" class="text-center fw-bold"){"No hay movimientos de cuenta"}
                             }
                         }
                     }
@@ -334,6 +347,15 @@ module ""
                 }
                 td {
                     font-size:.8rem;
+                }
+            }
+            @media screen and (max-width: 768px)
+            {
+                #container-selects
+                {
+                    display: grid !important;
+                    grid-template-columns: repeat(auto-fill, 6rem);
+                    grid-auto-rows: auto;
                 }
             }
             '

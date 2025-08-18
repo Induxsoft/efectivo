@@ -462,7 +462,7 @@ module "model"
         do mov.prepareView(db,params,data)
         return data
     }
-
+    //Obtiene datos relacionados con base al movimiento de cuenta, para el reporte conciliación de origen de movimientos
     mov.OrigenMovimiento::&db,&params
     {
         if not(field.exist(params,"decimals")){ params<"decimals"> : parse.num(dbr.vars.get(db,"FXCA001")) }
@@ -525,30 +525,71 @@ module "model"
             INNER JOIN categoria AS cat ON cat.sys_pk = mov.icategoria
             left join movcta_confirmacion mc on mov.sys_pk=mc.ref_mov
         WHERE mov.icuenta = @_entity_id
+        AND 
+        CASE ifnull(@depret,'*')
+            WHEN '0' THEN mov.egreso > 0 -- retiro
+            WHEN '1' THEN mov.ingreso > 0 -- Depósito
+            ELSE true
+        END
             #<@filter_by_status>
             #<@filter_range_fecha>
         ORDER BY #<@mov_fdr_field>, mov.referencia
         "
-
+        //obtenemos los movimientos de la cuenta indicada.
         ref movimientos=dbr.list(db,ftext(sql),params)
+        //creamos una lista vaciá para agregar los movimientos de cuenta según los filtros
+        ref _movimientos=list.create()
+        poridentificar=trim(@@(params,"$poridentificar"))
+
         for i = 0; i < @count(movimientos)
         {
             ref mov=@item(movimientos,i)
+            //obtenemos los elementos relacionados del movimiento de cuenta.
             ref @erp.efectivo.movimientos.array_relacionados=erp.efectivo.movimientos.relacionados(db,@@(mov,"#sys_pk"))
             mov<"relacionados*">:@erp.efectivo.movimientos.array_relacionados
+            //obtenemos el importe por identificar del movimiento de cuenta, el importe se obtiene con base al array @erp.efectivo.movimientos.array_relacionados si es null.
+            //al ejecutar erp.efectivo.movimientos.importe_no_identificado obtendrá los elementos relaciondos con base a la consulta configurada.
             mov<"importe_por_identificar">:erp.efectivo.movimientos.importe_no_identificado(db,@@(mov,"#sys_pk"))
+
+            //identificamos el filtro poridentificar 
+            // 1 - Por identificar
+            // 0 - Identificados
+            // * - Todos (Por identificar e Identificados)
+
+            if poridentificar!="*" && poridentificar!=""
+            {
+                switch poridentificar
+                {
+                    case "1"
+                    {
+                        //sí importe_por_identificar es mayor a 0, el movimiento tiene importe por identificar.
+                        if @@(mov,"#importe_por_identificar")> 0{do list.add(_movimientos,mov)}
+                        break
+                    }
+                    case "0"
+                    {
+                        //sí importe_por_identificar es igual a 0, el movimiento ya fue identificado.
+                        if @@(mov,"#importe_por_identificar") == 0{do list.add(_movimientos,mov)}
+                        break
+                    }
+                }
+            }
+            else{do list.add(_movimientos,mov)}
         }
+        //objeto de datos de retorno
         new entity
         {
             @"cuenta*":dbr.rec(db,"SELECT c.sys_pk,c.clabe,c.nombre,c.codcuenta,c.notas,c.numcuenta,d.codigo AS divisa,d.tcambio 
             FROM chequera c 
             INNER JOIN divisa d ON c.idivisa=d.sys_pk
             where c.sys_pk=@_entity_id",params)
-            @"movimientos*":movimientos
+            @"movimientos*":_movimientos
         }
+        //obtenemos los saldos de la cuenta indicada
         if @mov_cuenta_show_totales{entity<"saldos*">:mov.obtenerSaldos(db,params,@null)}
-
+        //obtenemos los datos del título del reporte de conciliación de origen de movimientos.
         do setPrintTitles(db,entity)
+
         return entity
     }
 }
