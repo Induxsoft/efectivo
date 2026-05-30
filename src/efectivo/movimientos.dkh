@@ -32,7 +32,7 @@ module ":erp.efectivo.movimientos"
             ndt_fecha = ndatetime.fromstr(fecha,"yyyy-MM-dd")
             ndt_aplicacion = ndatetime.fromstr(aplicacion,"yyyy-MM-dd")
 
-            if ndatetime.diff(ndt_aplicacion,ndt_fecha,"d") < 0 { do rise_error(517,"La fecha de aplicación no puede ser inferior a la fecha de emisión.") }
+            // if ndatetime.diff(ndt_aplicacion,ndt_fecha,"d") < 0 { do rise_error(517,"La fecha de aplicación no puede ser inferior a la fecha de emisión.") }
         }
 
         new movcuenta
